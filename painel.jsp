@@ -8,8 +8,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Painel Comercial — Sankhya</title>
-    <link rel="stylesheet" type="text/css" href="${BASE_FOLDER}/css/tv.css" />
     <snk:load/>
+
+    <script>
+        (function () {
+            var base = "https://willdarkmode.github.io/DM-Dashboard";
+            var version = Date.now();
+
+            window.DM_ASSET_BASE = base;
+            window.DM_ASSET_VERSION = version;
+
+            var css = document.createElement("link");
+            css.rel = "stylesheet";
+            css.type = "text/css";
+            css.href = base + "/css/tv.css?v=" + version;
+
+            document.head.appendChild(css);
+        })();
+    </script>
 </head>
 <body>
 <div class="tv-scale">
@@ -107,12 +123,38 @@
             <div class="rank-sub" id="rankSub">Performance do período</div>
             <div class="rank-divider"></div>
         </div>
-        <div class="rank-list"><div class="rank-track" id="rankTrack"></div></div>
+        <div class="rank-list" id="rankList">
+            <div class="rank-track" id="rankTrack"></div>
+        </div>
     </aside>
 </div>
 </div>
 
 <div class="ticker"><div class="ticker-inner" id="ticker">Carregando informações comerciais...</div></div>
-<script src="${BASE_FOLDER}/js/tv.js"></script>
+<script>
+    (function () {
+        var script = document.createElement("script");
+
+        script.src =
+            window.DM_ASSET_BASE +
+            "/js/tv.js?v=" +
+            window.DM_ASSET_VERSION;
+
+        script.onerror = function () {
+            console.error(
+                "[DM-DASHBOARD] Não foi possível carregar o tv.js remoto."
+            );
+
+            var status = document.getElementById("sourceStatus");
+
+            if (status) {
+                status.textContent = "Erro JS";
+                status.style.color = "#ff6b6b";
+            }
+        };
+
+        document.body.appendChild(script);
+    })();
+</script>
 </body>
 </html>
