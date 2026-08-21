@@ -756,7 +756,7 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
         brl(ritmo.necessario_por_dia_util) + "/dia útil</span>";
       var fonteTxt = cached
         ? '<span class="highlight">⚠ Última carga válida</span>'
-        : '<span class="highlight">DADOS REAIS · Sankhya</span>';
+        : '<span class="highlight">P&R Automação Industrial</span>';
 
       ticker.innerHTML = liderTxt + metaTxt + fonteTxt + liderTxt + metaTxt + fonteTxt;
     }
