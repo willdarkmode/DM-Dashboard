@@ -495,8 +495,8 @@ BASE_META AS (
             WHEN 59 THEN 200000
             WHEN 65 THEN 150000
             WHEN 28 THEN 150000
-            WHEN 62 THEN 200000
-            WHEN 63 THEN 200000
+            WHEN 62 THEN 175000
+            WHEN 63 THEN 175000
             ELSE 0
         END AS META_MENSAL
     FROM TGFVEN VEN
