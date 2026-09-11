@@ -13,19 +13,16 @@
     <!--
         V2.18 — baseline externa
         JSP: estrutura HTML + <snk:load/>
-        CSS específico: /css/dashboard.css
-        JS dos módulos: /js/dashboard.js
-        Visão Geral legada: /css/tv.css + /js/tv.js
+        CSS consolidado: /css/dashboard.css
+        JS consolidado: /js/dashboard.js
+        Visão Geral incorporada aos arquivos dashboard.* a partir da V2.21.0
     -->
 
     <!-- Assets externos — V2.18 -->
-    <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/tv.css?v=2.18.0"
-          onerror="console.error('[DM-DASHBOARD] Falha ao carregar tv.css remoto.')" />
-    <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.18.0"
+<link rel="stylesheet"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.21.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.18: estilos específicos do dashboard carregados de dashboard.css -->
+    <!-- V2.21.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -83,7 +80,7 @@
         <!-- =========================================================
              1. VISÃO GERAL
              O conteúdo abaixo é o painel que já existe hoje.
-             IDs e estrutura funcional foram preservados para o tv.js.
+             IDs e estrutura funcional preservados; a lógica da Visão Geral agora integra dashboard.js.
              ========================================================= -->
         <section class="dm-page is-active" id="page-overview" data-page-view="overview">
             <div class="tv-scale">
@@ -976,13 +973,9 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.18: módulos do dashboard e navegação carregados de dashboard.js -->
-<!-- tv.js legado da Visão Geral permanece externo -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.18.0"
+<!-- V2.21.0: JavaScript consolidado (módulos + navegação + Visão Geral) -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.21.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/tv.js?v=2.18.0"
-        charset="UTF-8"
-        onerror="console.error('[DM-DASHBOARD] Falha ao carregar tv.js remoto.');"></script>
 </body>
 </html>
