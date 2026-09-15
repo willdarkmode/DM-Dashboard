@@ -1,126 +1,106 @@
 # Regra Financeira Única — DM Dashboard
 
-## Objetivo
+## Status
 
-Este documento consolida as regras financeiras encontradas na V2.21.0 do DM Dashboard e define a base candidata para uma regra única entre as abas Visão Geral, Desempenho, Clientes e Marcas/Produtos.
+Regra validada no DBExplorer em 15/09/2026 e adotada como referência para Visão Geral, Desempenho, Clientes e Marcas/Produtos.
 
-A regra candidata **não deve ser aplicada aos números da aplicação antes da auditoria no banco**. Existem diferenças na Visão Geral que podem ser regras históricas legítimas do Gadget 458 e precisam ser medidas antes de qualquer alteração.
+## Regra oficial
 
-## Base candidata comum
+### Empresas
 
-A maior parte dos módulos atuais converge para a seguinte definição:
+`CODEMP IN (1,2,3)`
 
-- Empresas: `CODEMP IN (1,2,3)`.
-- Documento válido: `STATUSNOTA = 'L'`.
-- Data financeira: `DTNEG`.
-- Vendas: `TIPMOV = 'V'`.
-- TOPs de venda: `8, 2011, 2019, 2022, 2029, 2059, 2073, 3200, 3201, 3202, 5119, 6102, 6103, 6109, 6110, 6502, 7102`.
-- Devoluções: `TIPMOV = 'D'`.
-- TOPs de devolução: `2200, 2201`.
-- Documentos excluídos: `66178, 70700, 73193, 77224`.
+### TOPs de venda
+
+`8, 2011, 2019, 2022, 2029, 2059, 2073, 3200, 3201, 3202, 5119, 6102, 6103, 6109, 6110, 6502, 7102`
+
+### TOPs de devolução
+
+`2200, 2201, 2069, 2070`
+
+As TOPs adicionais foram confirmadas no banco:
+
+- `2069` — DEVOLUÇÃO DE VENDA - NF EXPORTAÇÃO
+- `2070` — DEVOLUÇÃO DE VENDA - NF EXP TERCEIRO
+
+Ambas possuem uso real e não devem ser removidas da regra financeira.
+
+### Documentos excluídos
+
+`66178, 70700, 73193, 77224, 85850`
+
+A NUNOTA `85850` é mantida como exceção histórica oficial porque já fazia parte da regra original baseada no Gadget 458. A auditoria confirmou que ela é uma devolução integral TOP 2201, relacionada pela TGFVAR à venda NUNOTA 85478.
+
+### Cálculos
+
 - Faturamento bruto: soma de `VLRNOTA` das vendas válidas.
 - Devoluções: soma positiva de `VLRNOTA` das devoluções válidas.
 - Faturamento líquido: faturamento bruto menos devoluções.
+- Documento financeiro válido: `STATUSNOTA = 'L'`.
+- Data financeira: `DTNEG`.
+- Período comercial padrão: dia 05 até dia 04 do mês seguinte.
 
-Essa definição já é utilizada de forma consistente em Desempenho, Curva ABC de Clientes e Marcas/Produtos.
+## Validação do período 05/09/2026 a 04/10/2026
 
-## Matriz atual
+A auditoria comparou a regra comum com a Visão Geral:
 
-| Regra | Visão Geral — KPIs | Visão Geral — Ranking | Desempenho | Clientes | Marcas/Produtos | Situação |
-|---|---|---|---|---|---|---|
-| Empresas | 1,2,3 | 1,2,3 | 1,2,3 | 1,2,3 | 1,2,3 | Convergente |
-| Status financeiro | `L` | `L` | `L` | `L` | `L` | Convergente |
-| TOPs venda | Base comum | Base comum | Base comum | Base comum | Base comum | Convergente |
-| TOPs devolução | 2200,2201,2069,2070 no Fat+Prev e devoluções | 2200,2201 | 2200,2201 | 2200,2201 | 2200,2201 | **Divergente** |
-| TOP 2067 | Citada no `CASE` do card Total Faturado, mas não passa pelo `WHERE`; hoje não produz efeito | Não | Não | Não | Não | **Código inconsistente/inócuo** |
-| Notas excluídas | 66178,70700,73193,77224,85850 no Fat+Prev/devoluções | 66178,70700,73193,77224 | 66178,70700,73193,77224 | 66178,70700,73193,77224 | 66178,70700,73193,77224 | **Divergente** |
-| Faturamento líquido | Fat+Prev usa devoluções adicionais; card Total Faturado efetivamente soma vendas | Ranking subtrai 2200/2201 | Bruto - 2200/2201 | Bruto - 2200/2201 na ABC | Bruto - 2200/2201 | **Divergente na Visão Geral** |
-| Previsto total | Todo `TIPMOV='P'` pendente com `AD_PREVENT` no período, sem filtro de TOP | TOPs 5,19,20,24,2008,2010,2018,2047,3100,3107,3108,5002,5003 | Não compõe faturamento líquido | N/A | N/A | **Divergente** |
-| Exceção prevista | Nenhuma no total | NUNOTA 119822 / TOP 2047 é adicionada também ao vendedor 27 | N/A | N/A | N/A | **Validar possível dupla atribuição** |
-| Vendedor 7 | Incluído no total | Excluído do faturado do ranking | Disponível conforme dados | Carteira por `TGFPAR.CODVEND` | Filtro por `TGFCAB.CODVEND` | **Regra específica a validar** |
-| Data comercial padrão | 05 → 04 | 05 → 04 | 05 → 04 no modo Mês | Referência móvel / 12 meses | 05 → 04 no modo Mês | Intencionalmente diferente em Clientes |
+| Indicador | Valor |
+|---|---:|
+| Faturamento bruto | R$ 620.150,82 |
+| Devoluções | R$ 6.611,02 |
+| Faturamento líquido | R$ 613.539,80 |
+| Diferença entre regras | R$ 0,00 |
 
-## Divergências críticas
+## Previsto global x ranking comercial
 
-### 1. Devoluções 2069 e 2070
+Os dois indicadores possuem universos diferentes por decisão de negócio:
 
-A Visão Geral inclui `2069` e `2070` no cálculo de Faturado + Previsto e no card de devoluções. Desempenho, Clientes, Marcas e Ranking usam apenas `2200` e `2201`.
+- **Previsto global:** todos os pedidos pendentes com `AD_PREVENT` no período e empresas válidas.
+- **Previsto do ranking:** somente as TOPs elegíveis à equipe comercial.
 
-Decisão necessária após auditoria:
+A diferença de R$ 1,54 encontrada na auditoria foi identificada na NUNOTA `97476`, TOP `2098 — PEDIDO ML FULL`, vendedor 7 e parceiro RGA COMPONENTES.
 
-- se 2069/2070 forem devoluções comerciais válidas, devem entrar na regra única em todos os módulos;
-- se não forem, devem sair da Visão Geral.
+A TOP 2098 **não deve ser adicionada ao ranking apenas para forçar fechamento**. O ranking continua sendo uma visão da equipe comercial, enquanto o card geral representa a previsão global.
 
-### 2. Nota 85850
+## Regras específicas preservadas
 
-A nota `85850` é excluída em partes da Visão Geral, mas não está excluída nos demais módulos. É necessário identificar TOP, tipo de movimento e motivo histórico da exceção.
+Os conjuntos abaixo são operacionais e não devem ser substituídos automaticamente pelas TOPs da regra financeira:
 
-### 3. Card Total Faturado
+- Funil Componentes/Painéis: propostas, pedidos e descendentes na TGFVAR.
+- Assistência Técnica: orçamentos, OS/pedidos, liberações e descendentes de faturamento.
+- Ticket por frente: classificação da NF por ancestrais na TGFVAR e cálculo sobre faturamento bruto.
+- Grande Chance: universo próprio de TOPs e campo `AD_GRANDEC`.
+- Previsto do ranking: subconjunto próprio de TOPs elegíveis.
 
-O `CASE` do card menciona devoluções `2200,2201,2067,2069,2070`, porém o `WHERE` da mesma subconsulta permite somente as TOPs de venda. Na prática, as devoluções não chegam ao `CASE`, portanto o card se comporta como faturamento bruto.
+## Limpezas validadas
 
-Isso pode ser intencional pelo nome “Total Faturado”, mas o SQL atual transmite uma regra diferente da que realmente executa.
+### TOP 2067
 
-### 4. Previsto total x previsto do ranking
+A TOP 2067 aparecia em um `CASE` do card Total Faturado, mas a própria cláusula `WHERE` impedia que ela chegasse a esse trecho. Era uma referência inócua e pode ser removida sem alterar o conceito do indicador.
 
-O previsto total aceita qualquer pedido pendente com `AD_PREVENT` no período. O ranking restringe o previsto a um conjunto de TOPs.
+### NUNOTA 119822
 
-Consequência: a soma do previsto dos vendedores pode não fechar com o card Total Previsto.
+Existia um `UNION ALL` no ranking que reatribuía essa nota ao vendedor 27 apenas se ela fosse TOP 2047 e estivesse pendente. A auditoria mostrou que atualmente ela é TOP 3100 e `PENDENTE=N`; a exceção não pode mais disparar e foi classificada como código histórico inativo.
 
-### 5. NUNOTA 119822
+## Implementação V2.22.0
 
-O ranking possui uma segunda inclusão explícita da nota `119822`, TOP `2047`, para o vendedor 27. Como a consulta anterior já lê TOP 2047 normalmente, é necessário conferir se essa nota fica duplicada no total do ranking ou se a exceção corrige uma atribuição histórica específica.
+A regra compartilhada passa a ficar em `js/financial-rules.js`.
 
-## Regras que não devem ser confundidas com a regra financeira
+Esse arquivo:
 
-Os seguintes conjuntos de TOPs possuem finalidade operacional e podem continuar diferentes:
+- expõe `window.DMRules` como fonte central das constantes financeiras;
+- normaliza as SQLs antes da chamada a `executeQuery()`;
+- inclui 2069/2070 nas devoluções dos módulos analíticos;
+- aplica a exclusão da NUNOTA 85850 de forma uniforme;
+- mantém as listas operacionais específicas intactas;
+- remove a exceção inativa da NUNOTA 119822;
+- preserva o conceito de faturamento bruto do card Total Faturado.
 
-- Funil Componentes/Painéis: propostas 3098/3099, pedidos 19/2010/3100 e TOPs descendentes de faturamento.
-- Assistência Técnica: orçamentos 2047/3097, raízes 2010/3108, liberações 2018/3108 e descendentes de faturamento.
-- Ticket por frente: classificação da NF por ancestrais na TGFVAR.
+A camada deve ser carregada **antes** de `dashboard.js` no `painel.jsp`.
 
-Essas regras medem processo/conversão e não devem automaticamente herdar todas as TOPs da base financeira.
+## Critérios de aceite
 
-## Fonte de verdade do projeto
-
-Desde o README inicial do repositório, a Visão Geral declara:
-
-- Gadget 458: faturamento, previsto, grande chance, devoluções e ranking;
-- Gadget 457: estoque.
-
-A auditoria deve comparar a regra única proposta com esses resultados e, se houver uma regra mais recente no Sankhya, ela deve ser documentada antes da migração.
-
-## Ordem de validação
-
-1. Executar `sql/auditoria_regra_financeira.sql` no DBExplorer.
-2. Medir o valor movimentado nas TOPs 2069 e 2070.
-3. Inspecionar a nota 85850.
-4. Conferir a diferença entre Previsto Total e Previsto elegível ao Ranking.
-5. Conferir a nota 119822 e sua atribuição de vendedor.
-6. Definir a lista final de TOPs de devolução e de documentos excluídos.
-7. Só então centralizar as constantes no JavaScript e substituir as listas duplicadas.
-
-## Arquitetura alvo
-
-Após a validação, o código deverá ter um único objeto de configuração para regras compartilhadas, por exemplo:
-
-```javascript
-var DM_RULES = {
-    companies: [1, 2, 3],
-    saleTops: [8, 2011, 2019, 2022, 2029, 2059, 2073, 3200, 3201, 3202, 5119, 6102, 6103, 6109, 6110, 6502, 7102],
-    returnTops: [2200, 2201], // confirmar auditoria 2069/2070
-    excludedInvoices: [66178, 70700, 73193, 77224], // confirmar 85850
-    commercialPeriodStartDay: 5
-};
-```
-
-As regras de funil, assistência, origem de frente, marcas e metas devem ficar em grupos separados para não misturar lógica financeira com lógica operacional.
-
-## Critério de aceite da migração
-
-Depois da centralização:
-
-- o faturamento líquido do mesmo período deve fechar entre Visão Geral, Desempenho, Clientes e Marcas quando comparado no mesmo universo;
-- diferenças intencionais devem estar nomeadas na interface e documentadas;
-- Total Previsto e soma do ranking devem ter regra explicitamente igual ou uma justificativa de negócio documentada;
-- nenhuma alteração de TOP, empresa, exceção ou meta deve exigir editar a mesma regra em vários trechos do arquivo.
+- O mesmo período e universo financeiro devem produzir o mesmo faturamento líquido em Visão Geral, Desempenho, Clientes e Marcas/Produtos.
+- Diferenças intencionais de universo, como Previsto Global x Ranking, devem permanecer documentadas.
+- Alterações futuras de empresas, TOPs financeiras ou notas excluídas devem ser feitas em um único ponto.
+- Regras operacionais de funil, Assistência Técnica, Grande Chance e classificação de frente permanecem independentes.
