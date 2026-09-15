@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.23.0
+## Arquitetura V2.23.1
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -25,6 +25,8 @@ A aplicação usa uma estrutura enxuta, sem loader intermediário:
 - `js/dashboard.js`: regras globais, consultas e módulos da aplicação.
 
 A regra financeira oficial fica centralizada no início de `dashboard.js` em `DMRules`. As consultas financeiras usam diretamente `DM_RULES_SQL`, sem interceptação ou reescrita de SQL em tempo de execução.
+
+A versão exibida nos módulos também vem de `DMRules.version`: os selos visuais usam `data-dm-version`, evitando versões hardcoded espalhadas pelo JSP.
 
 ## Regra financeira oficial
 
