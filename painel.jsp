@@ -15,14 +15,14 @@
         JSP: estrutura HTML + <snk:load/>
         CSS consolidado: /css/dashboard.css
         JS consolidado: /js/dashboard.js
-        Visão Geral incorporada aos arquivos dashboard.* a partir da V2.21.0
+        Visão Geral incorporada aos arquivos dashboard.* a partir da V2.23.0
     -->
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.21.0"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.23.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.21.0: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.23.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
