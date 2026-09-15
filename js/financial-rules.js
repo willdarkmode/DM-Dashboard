@@ -2,7 +2,7 @@
  * DM Dashboard — Regra Financeira Única (V2.22.0)
  *
  * Camada central de normalização das consultas financeiras do dashboard.
- * Mantém o dashboard.js legado intacto enquanto garante que Visão Geral,
+ * Mantém o dashboard-core.js legado intacto enquanto garante que Visão Geral,
  * Desempenho, Clientes e Marcas utilizem a mesma base financeira.
  *
  * Regra validada no DBExplorer em 15/09/2026:
@@ -161,6 +161,35 @@
     }
 
     rules.normalizeSql = normalizeSql;
+
+    /*
+     * As notas metodológicas já existem no HTML legado. Atualizamos somente
+     * o texto que descreve devoluções para que a interface não exiba uma
+     * regra antiga enquanto a V2.22.0 estiver ativa.
+     */
+    function syncMethodNotes() {
+        var perfNote = document.querySelector(".perf-method-details .perf-note");
+        if (perfNote && perfNote.innerHTML.indexOf("devoluções 2200/2201") >= 0) {
+            perfNote.innerHTML = perfNote.innerHTML.replace(
+                "devoluções 2200/2201",
+                "devoluções 2200/2201/2069/2070"
+            );
+        }
+
+        var brandNote = document.getElementById("brandMethodNote");
+        if (brandNote && brandNote.innerHTML.indexOf("devoluções usam 2200/2201") >= 0) {
+            brandNote.innerHTML = brandNote.innerHTML.replace(
+                "devoluções usam 2200/2201",
+                "devoluções usam 2200/2201/2069/2070"
+            );
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", syncMethodNotes, { once: true });
+    } else {
+        syncMethodNotes();
+    }
 
     if (typeof window.executeQuery !== "function") {
         console.error("[DM-DASHBOARD][RULES] executeQuery() não está disponível; regra financeira não foi aplicada.");
