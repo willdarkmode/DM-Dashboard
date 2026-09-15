@@ -138,7 +138,7 @@
                         <div class="meta-panel">
                             <div class="meta-top">
                                 <div>
-                                    <div class="meta-eyebrow">Faturado + Previsto</div>
+                                    <div class="meta-eyebrow">Faturamento líquido + Previsto</div>
                                     <div class="meta-big" id="heroFat">R$ —</div>
                                 </div>
                                 <div class="meta-right">
@@ -475,7 +475,7 @@
 
                     <details class="perf-method-details">
                         <summary>Regras e critérios dos indicadores</summary>
-                        <div class="perf-note"><strong>Regra validada:</strong> o funil principal acompanha somente propostas de Componentes e Painéis (TOPs 3099/3098) pela TGFVAR. A Assistência Técnica fica totalmente separada, com leitura operacional própria: raízes 2010/3108, liberação 2018/3108 e faturamento pelos descendentes válidos; os orçamentos 2047/3097 aparecem apenas como informação complementar e não entram no funil principal. O faturamento comercial principal é líquido (vendas menos devoluções 2200/2201). A composição por segmento usa TGFPAR.AD_SEGMENTO, traduzido pelo dicionário TDDCAM/TDDOPC, e calcula a participação sobre o faturamento líquido. A composição por tipo de cliente usa TGFPAR.CODTIPPARC; códigos 10100000 a 10700000 seguem a classificação comercial validada e valor 0/nulo é exibido como “Sem tipo de cliente”. O ticket médio geral permanece bruto por NF de venda. O ticket por frente é um indicador consolidado exibido somente em Todos os vendedores; as NFs são classificadas uma única vez como Distribuição, Painéis ou Assistência Técnica a partir dos ancestrais na TGFVAR.</div>
+                        <div class="perf-note"><strong>Regra validada:</strong> o funil principal acompanha somente propostas de Componentes e Painéis (TOPs 3099/3098) pela TGFVAR. A Assistência Técnica fica totalmente separada, com leitura operacional própria: raízes 2010/3108, liberação 2018/3108 e faturamento pelos descendentes válidos; os orçamentos 2047/3097 aparecem apenas como informação complementar e não entram no funil principal. O faturamento comercial principal é líquido (vendas menos devoluções 2200/2201/2069/2070). A composição por segmento usa TGFPAR.AD_SEGMENTO, traduzido pelo dicionário TDDCAM/TDDOPC, e calcula a participação sobre o faturamento líquido. A composição por tipo de cliente usa TGFPAR.CODTIPPARC; códigos 10100000 a 10700000 seguem a classificação comercial validada e valor 0/nulo é exibido como “Sem tipo de cliente”. O ticket médio geral permanece bruto por NF de venda. O ticket por frente é um indicador consolidado exibido somente em Todos os vendedores; as NFs são classificadas uma única vez como Distribuição, Painéis ou Assistência Técnica a partir dos ancestrais na TGFVAR.</div>
                     </details>
                 </article>
             </div>
@@ -946,7 +946,7 @@
                 </article>
 
                 <div class="brand-note" id="brandMethodNote">
-                    <strong>Regra validada no DBExplorer:</strong> TGFCAB.VLRNOTA é a verdade financeira do documento. A TGFITE define o peso proporcional de cada item pela base VLRTOT - VLRDESC + VLRIPI + VLRSUBST; o valor da nota é então rateado entre os itens. Vendas usam as TOPs comerciais já validadas e devoluções usam 2200/2201. Produtos com marca entram no mix de fabricantes; os grupos 4010000 (Painéis Elétricos) e 7010000 (Mão de Obra) formam Soluções Próprias / Serviços; o restante fica como Sem classificação de marca. O Ranking de Produtos usa a mesma base rateada, exibe apenas itens com faturamento líquido positivo e recalcula a participação sobre o universo selecionado (Produtos de Marca, Soluções ou Todos).
+                    <strong>Regra validada no DBExplorer:</strong> TGFCAB.VLRNOTA é a verdade financeira do documento. A TGFITE define o peso proporcional de cada item pela base VLRTOT - VLRDESC + VLRIPI + VLRSUBST; o valor da nota é então rateado entre os itens. Vendas usam as TOPs comerciais já validadas e devoluções usam 2200/2201/2069/2070. Produtos com marca entram no mix de fabricantes; os grupos 4010000 (Painéis Elétricos) e 7010000 (Mão de Obra) formam Soluções Próprias / Serviços; o restante fica como Sem classificação de marca. O Ranking de Produtos usa a mesma base rateada, exibe apenas itens com faturamento líquido positivo e recalcula a participação sobre o universo selecionado (Produtos de Marca, Soluções ou Todos).
                 </div>
             </div>
         </section>
@@ -973,8 +973,8 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.21.0: JavaScript consolidado (módulos + navegação + Visão Geral) -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.21.0"
+<!-- V2.23.0: JavaScript único (regras + módulos + navegação + Visão Geral) -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.23.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>

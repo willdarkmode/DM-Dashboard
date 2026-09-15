@@ -15,3 +15,14 @@ Regras desta versão:
 - Dias úteis: segunda a sexta, descontando feriados nacionais fixos e os móveis
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
+
+
+## Arquitetura V2.23.0
+
+A aplicação voltou a uma estrutura enxuta, sem loader intermediário:
+
+- `painel.jsp`: estrutura HTML do componente Sankhya;
+- `css/dashboard.css`: estilos consolidados;
+- `js/dashboard.js`: regras globais, consultas e módulos da aplicação.
+
+A regra financeira oficial fica centralizada no início de `dashboard.js` em `DMRules`. As consultas financeiras usam diretamente `DM_RULES_SQL`, sem interceptação ou reescrita de SQL em tempo de execução.
