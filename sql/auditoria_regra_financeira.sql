@@ -1,0 +1,293 @@
+/*
+ * DM Dashboard — Auditoria da Regra Financeira Única
+ *
+ * Executar no DBExplorer do Sankhya.
+ * Ajuste apenas DTINI e DTFIM no bloco PARAMS.
+ *
+ * Objetivos:
+ * 1) comparar a regra convergente dos módulos com a variante da Visão Geral;
+ * 2) medir 2069/2070;
+ * 3) inspecionar NUNOTA 85850;
+ * 4) medir diferença entre previsto total e previsto elegível ao ranking;
+ * 5) inspecionar NUNOTA 119822.
+ */
+
+/* ================================================================
+   A. RESUMO FINANCEIRO — REGRA BASE X VISÃO GERAL
+   ================================================================ */
+WITH PARAMS AS (
+    SELECT
+        TO_DATE('05/09/2026','DD/MM/YYYY') AS DTINI,
+        TO_DATE('04/10/2026','DD/MM/YYYY') AS DTFIM
+    FROM DUAL
+),
+BASE AS (
+    SELECT
+        CAB.NUNOTA,
+        CAB.CODTIPOPER,
+        CAB.TIPMOV,
+        CAB.CODVEND,
+        CAB.VLRNOTA
+    FROM TGFCAB CAB
+    CROSS JOIN PARAMS P
+    WHERE CAB.STATUSNOTA = 'L'
+      AND CAB.CODEMP IN (1,2,3)
+      AND CAB.DTNEG >= P.DTINI
+      AND CAB.DTNEG < P.DTFIM + 1
+),
+REGRA_COMUM AS (
+    SELECT
+        NVL(SUM(CASE
+            WHEN TIPMOV = 'V'
+             AND CODTIPOPER IN (
+                8,2011,2019,2022,2029,2059,2073,
+                3200,3201,3202,5119,6102,6103,6109,6110,6502,7102
+             )
+             AND NUNOTA NOT IN (66178,70700,73193,77224)
+            THEN VLRNOTA ELSE 0 END),0) AS FAT_BRUTO,
+        NVL(SUM(CASE
+            WHEN TIPMOV = 'D'
+             AND CODTIPOPER IN (2200,2201)
+             AND NUNOTA NOT IN (66178,70700,73193,77224)
+            THEN VLRNOTA ELSE 0 END),0) AS DEVOLUCOES
+    FROM BASE
+),
+REGRA_VISAO AS (
+    SELECT
+        NVL(SUM(CASE
+            WHEN TIPMOV = 'V'
+             AND CODTIPOPER IN (
+                8,2011,2019,2022,2029,2059,2073,
+                3200,3201,3202,5119,6102,6103,6109,6110,6502,7102
+             )
+             AND NUNOTA NOT IN (66178,70700,73193,77224,85850)
+            THEN VLRNOTA ELSE 0 END),0) AS FAT_BRUTO,
+        NVL(SUM(CASE
+            WHEN TIPMOV = 'D'
+             AND CODTIPOPER IN (2200,2201,2069,2070)
+             AND NUNOTA NOT IN (66178,70700,73193,77224,85850)
+            THEN VLRNOTA ELSE 0 END),0) AS DEVOLUCOES
+    FROM BASE
+)
+SELECT
+    C.FAT_BRUTO AS BASE_FAT_BRUTO,
+    C.DEVOLUCOES AS BASE_DEVOLUCOES,
+    C.FAT_BRUTO - C.DEVOLUCOES AS BASE_LIQUIDO,
+    V.FAT_BRUTO AS VISAO_FAT_BRUTO,
+    V.DEVOLUCOES AS VISAO_DEVOLUCOES,
+    V.FAT_BRUTO - V.DEVOLUCOES AS VISAO_LIQUIDO,
+    (V.FAT_BRUTO - V.DEVOLUCOES) - (C.FAT_BRUTO - C.DEVOLUCOES) AS DIFERENCA_LIQUIDA
+FROM REGRA_COMUM C
+CROSS JOIN REGRA_VISAO V;
+
+
+/* ================================================================
+   B. IMPACTO DAS TOPs 2069 / 2070
+   ================================================================ */
+WITH PARAMS AS (
+    SELECT
+        TO_DATE('05/09/2026','DD/MM/YYYY') AS DTINI,
+        TO_DATE('04/10/2026','DD/MM/YYYY') AS DTFIM
+    FROM DUAL
+)
+SELECT
+    CAB.CODTIPOPER,
+    COUNT(DISTINCT CAB.NUNOTA) AS QTD_NOTAS,
+    SUM(CAB.VLRNOTA) AS VALOR_TOTAL,
+    MIN(CAB.DTNEG) AS PRIMEIRA_DATA,
+    MAX(CAB.DTNEG) AS ULTIMA_DATA
+FROM TGFCAB CAB
+CROSS JOIN PARAMS P
+WHERE CAB.STATUSNOTA = 'L'
+  AND CAB.CODEMP IN (1,2,3)
+  AND CAB.DTNEG >= P.DTINI
+  AND CAB.DTNEG < P.DTFIM + 1
+  AND CAB.TIPMOV = 'D'
+  AND CAB.CODTIPOPER IN (2069,2070)
+GROUP BY CAB.CODTIPOPER
+ORDER BY CAB.CODTIPOPER;
+
+
+/* ================================================================
+   C. DETALHE DAS TOPs 2069 / 2070
+   ================================================================ */
+WITH PARAMS AS (
+    SELECT
+        TO_DATE('05/09/2026','DD/MM/YYYY') AS DTINI,
+        TO_DATE('04/10/2026','DD/MM/YYYY') AS DTFIM
+    FROM DUAL
+)
+SELECT
+    CAB.NUNOTA,
+    CAB.NUMNOTA,
+    CAB.DTNEG,
+    CAB.CODEMP,
+    CAB.CODTIPOPER,
+    CAB.TIPMOV,
+    CAB.CODPARC,
+    PAR.NOMEPARC,
+    CAB.CODVEND,
+    VEN.APELIDO AS VENDEDOR,
+    CAB.VLRNOTA
+FROM TGFCAB CAB
+LEFT JOIN TGFPAR PAR ON PAR.CODPARC = CAB.CODPARC
+LEFT JOIN TGFVEN VEN ON VEN.CODVEND = CAB.CODVEND
+CROSS JOIN PARAMS P
+WHERE CAB.STATUSNOTA = 'L'
+  AND CAB.CODEMP IN (1,2,3)
+  AND CAB.DTNEG >= P.DTINI
+  AND CAB.DTNEG < P.DTFIM + 1
+  AND CAB.TIPMOV = 'D'
+  AND CAB.CODTIPOPER IN (2069,2070)
+ORDER BY CAB.DTNEG, CAB.NUNOTA;
+
+
+/* ================================================================
+   D. INSPEÇÃO DA NUNOTA 85850
+   ================================================================ */
+SELECT
+    CAB.NUNOTA,
+    CAB.NUMNOTA,
+    CAB.DTNEG,
+    CAB.CODEMP,
+    CAB.CODTIPOPER,
+    CAB.TIPMOV,
+    CAB.STATUSNOTA,
+    CAB.CODPARC,
+    PAR.NOMEPARC,
+    CAB.CODVEND,
+    VEN.APELIDO AS VENDEDOR,
+    CAB.VLRNOTA,
+    CAB.PENDENTE,
+    CAB.AD_PREVENT,
+    CAB.AD_GRANDEC
+FROM TGFCAB CAB
+LEFT JOIN TGFPAR PAR ON PAR.CODPARC = CAB.CODPARC
+LEFT JOIN TGFVEN VEN ON VEN.CODVEND = CAB.CODVEND
+WHERE CAB.NUNOTA = 85850;
+
+
+/* ================================================================
+   E. PREVISTO TOTAL X PREVISTO ELEGÍVEL AO RANKING
+   ================================================================ */
+WITH PARAMS AS (
+    SELECT
+        TO_DATE('05/09/2026','DD/MM/YYYY') AS DTINI,
+        TO_DATE('04/10/2026','DD/MM/YYYY') AS DTFIM
+    FROM DUAL
+),
+BASE AS (
+    SELECT CAB.*
+    FROM TGFCAB CAB
+    CROSS JOIN PARAMS P
+    WHERE CAB.TIPMOV = 'P'
+      AND CAB.PENDENTE = 'S'
+      AND CAB.CODEMP IN (1,2,3)
+      AND CAB.AD_PREVENT >= P.DTINI
+      AND CAB.AD_PREVENT < P.DTFIM + 1
+)
+SELECT
+    SUM(VLRNOTA) AS PREVISTO_TOTAL,
+    SUM(CASE
+        WHEN CODTIPOPER IN (
+            5,19,20,24,2008,2010,2018,2047,
+            3100,3108,3107,5002,5003
+        ) THEN VLRNOTA ELSE 0 END
+    ) AS PREVISTO_RANKING,
+    SUM(VLRNOTA) - SUM(CASE
+        WHEN CODTIPOPER IN (
+            5,19,20,24,2008,2010,2018,2047,
+            3100,3108,3107,5002,5003
+        ) THEN VLRNOTA ELSE 0 END
+    ) AS DIFERENCA
+FROM BASE;
+
+
+/* ================================================================
+   F. TOPs QUE FORMAM A DIFERENÇA DO PREVISTO
+   ================================================================ */
+WITH PARAMS AS (
+    SELECT
+        TO_DATE('05/09/2026','DD/MM/YYYY') AS DTINI,
+        TO_DATE('04/10/2026','DD/MM/YYYY') AS DTFIM
+    FROM DUAL
+)
+SELECT
+    CAB.CODTIPOPER,
+    COUNT(DISTINCT CAB.NUNOTA) AS QTD,
+    SUM(CAB.VLRNOTA) AS VALOR
+FROM TGFCAB CAB
+CROSS JOIN PARAMS P
+WHERE CAB.TIPMOV = 'P'
+  AND CAB.PENDENTE = 'S'
+  AND CAB.CODEMP IN (1,2,3)
+  AND CAB.AD_PREVENT >= P.DTINI
+  AND CAB.AD_PREVENT < P.DTFIM + 1
+  AND CAB.CODTIPOPER NOT IN (
+      5,19,20,24,2008,2010,2018,2047,
+      3100,3108,3107,5002,5003
+  )
+GROUP BY CAB.CODTIPOPER
+ORDER BY SUM(CAB.VLRNOTA) DESC;
+
+
+/* ================================================================
+   G. INSPEÇÃO DA NUNOTA 119822
+   ================================================================ */
+SELECT
+    CAB.NUNOTA,
+    CAB.NUMNOTA,
+    CAB.DTNEG,
+    CAB.CODEMP,
+    CAB.CODTIPOPER,
+    CAB.TIPMOV,
+    CAB.STATUSNOTA,
+    CAB.CODPARC,
+    PAR.NOMEPARC,
+    CAB.CODVEND,
+    VEN.APELIDO AS VENDEDOR,
+    CAB.VLRNOTA,
+    CAB.PENDENTE,
+    CAB.AD_PREVENT,
+    CAB.AD_GRANDEC
+FROM TGFCAB CAB
+LEFT JOIN TGFPAR PAR ON PAR.CODPARC = CAB.CODPARC
+LEFT JOIN TGFVEN VEN ON VEN.CODVEND = CAB.CODVEND
+WHERE CAB.NUNOTA = 119822;
+
+
+/* ================================================================
+   H. IMPACTO DO VENDEDOR 7 NO FATURAMENTO DO PERÍODO
+   ================================================================ */
+WITH PARAMS AS (
+    SELECT
+        TO_DATE('05/09/2026','DD/MM/YYYY') AS DTINI,
+        TO_DATE('04/10/2026','DD/MM/YYYY') AS DTFIM
+    FROM DUAL
+)
+SELECT
+    CAB.CODVEND,
+    NVL(VEN.APELIDO, 'Sem apelido') AS VENDEDOR,
+    SUM(CASE
+        WHEN CAB.TIPMOV = 'V' THEN CAB.VLRNOTA
+        WHEN CAB.TIPMOV = 'D' THEN -CAB.VLRNOTA
+        ELSE 0 END
+    ) AS FATURAMENTO_LIQUIDO
+FROM TGFCAB CAB
+LEFT JOIN TGFVEN VEN ON VEN.CODVEND = CAB.CODVEND
+CROSS JOIN PARAMS P
+WHERE CAB.STATUSNOTA = 'L'
+  AND CAB.CODEMP IN (1,2,3)
+  AND CAB.DTNEG >= P.DTINI
+  AND CAB.DTNEG < P.DTFIM + 1
+  AND CAB.CODVEND = 7
+  AND CAB.NUNOTA NOT IN (66178,70700,73193,77224)
+  AND (
+      (CAB.TIPMOV = 'V' AND CAB.CODTIPOPER IN (
+          8,2011,2019,2022,2029,2059,2073,
+          3200,3201,3202,5119,6102,6103,6109,6110,6502,7102
+      ))
+      OR
+      (CAB.TIPMOV = 'D' AND CAB.CODTIPOPER IN (2200,2201))
+  )
+GROUP BY CAB.CODVEND, VEN.APELIDO;
