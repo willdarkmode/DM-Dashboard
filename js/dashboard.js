@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — V2.23.0
+ * DM Dashboard — V2.23.1
  *
  * Arquitetura consolidada:
  * - um único JavaScript de aplicação
@@ -9,7 +9,7 @@
  * Regra financeira validada no DBExplorer em 15/09/2026.
  */
 var DMRules = {
-    version: "2.23.0",
+    version: "2.23.1",
     companies: [1, 2, 3],
     saleTops: [
         8, 2011, 2019, 2022, 2029, 2059, 2073,
@@ -33,13 +33,27 @@ var DM_RULES_SQL = {
 window.DMRules = DMRules;
 window.DM_RULES_SQL = DM_RULES_SQL;
 
+function syncDashboardVersionLabels() {
+    var label = "V" + DMRules.version;
+    var nodes = document.querySelectorAll("[data-dm-version]");
+    for (var i = 0; i < nodes.length; i++) {
+        nodes[i].textContent = label;
+    }
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncDashboardVersionLabels);
+} else {
+    syncDashboardVersionLabels();
+}
+
 console.info(
     "[DM-DASHBOARD] V" + DMRules.version +
     " · regra financeira centralizada · devoluções: " + DM_RULES_SQL.returnTops
 );
 
 /*
- * DM Dashboard — V2.23.0 (consolidado)
+ * DM Dashboard — V2.23.1 (consolidado)
  * Ordem preservada da versão funcional:
  *   1) módulos e navegação (dashboard.js)
  *   2) motor da Visão Geral (antigo tv.js)

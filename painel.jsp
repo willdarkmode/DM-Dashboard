@@ -20,9 +20,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.23.0"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.23.1"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.23.0: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.23.1: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -196,7 +196,7 @@
                         <p class="dm-module-desc">Evolução do faturamento, composição das vendas, funil comercial e leitura operacional da Assistência Técnica, acompanhados pelos dados reais do Sankhya.</p>
                     </div>
                     <div class="perf-head-side">
-                        <div class="dm-module-status" id="perfHeaderStatus">Dados reais · Sankhya · V2.17.1</div>
+                        <div class="dm-module-status" id="perfHeaderStatus">Dados reais · Sankhya · <span data-dm-version></span></div>
                         <div class="perf-update-time" id="perfUpdatedAt">Aguardando primeira consulta</div>
                     </div>
                 </div>
@@ -490,7 +490,7 @@
                         <h1 class="dm-module-title">Clientes</h1>
                         <p class="dm-module-desc">Saúde da carteira e concentração do faturamento por Curva ABC. A carteira é atribuída pelo vendedor responsável no cadastro do parceiro (TGFPAR.CODVEND).</p>
                     </div>
-                    <div class="dm-module-status">Saúde + Curva ABC + Ranking · V2.13.2</div>
+                    <div class="dm-module-status">Saúde + Curva ABC + Ranking · <span data-dm-version></span></div>
                 </div>
 
                 <div class="cust-toolbar">
@@ -779,7 +779,7 @@
                         <p class="dm-module-desc">Leitura do faturamento líquido por fabricantes e soluções próprias. O valor oficial da nota é rateado proporcionalmente entre os itens para manter o fechamento financeiro com o Sankhya.</p>
                     </div>
                     <div class="perf-head-side">
-                        <div class="dm-module-status">Mix Comercial · V2.16</div>
+                        <div class="dm-module-status">Mix Comercial · <span data-dm-version></span></div>
                         <div class="perf-update-time" id="brandUpdatedAt">Aguardando primeira consulta</div>
                     </div>
                 </div>
@@ -973,8 +973,8 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.23.0: JavaScript único (regras + módulos + navegação + Visão Geral) -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.23.0"
+<!-- V2.23.1: JavaScript único (regras + módulos + navegação + Visão Geral) -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.23.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
