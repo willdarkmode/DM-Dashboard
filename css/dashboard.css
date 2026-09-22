@@ -3799,3 +3799,165 @@ html[data-dm-theme="light"] .brand-skeleton {
     background: linear-gradient(90deg, rgba(15,23,42,.04), rgba(15,23,42,.09), rgba(15,23,42,.04));
     background-size: 220% 100%;
 }
+
+
+/* ================================================================
+   V2.24.1 — Refinos de contraste do tema claro
+   Ajustes pontuais após validação visual no Sankhya.
+   ================================================================ */
+html[data-dm-theme="light"] .perf-context,
+html[data-dm-theme="light"] .cust-context,
+html[data-dm-theme="light"] .perf-query-state,
+html[data-dm-theme="light"] .cust-query-state,
+html[data-dm-theme="light"] .perf-update-time {
+    color: #526174;
+}
+
+html[data-dm-theme="light"] .perf-context strong,
+html[data-dm-theme="light"] .cust-context strong {
+    color: #334155;
+    font-weight: 750;
+}
+
+html[data-dm-theme="light"] .perf-seller-code {
+    color: #526174;
+}
+
+html[data-dm-theme="light"] .perf-filter-label,
+html[data-dm-theme="light"] .perf-custom-date-label,
+html[data-dm-theme="light"] .cust-filter-label,
+html[data-dm-theme="light"] .cust-ranking-label {
+    color: #526174;
+}
+
+html[data-dm-theme="light"] .perf-action-btn,
+html[data-dm-theme="light"] .cust-action-btn {
+    color: #047857;
+    background: rgba(5, 150, 105, .10);
+    border-color: rgba(5, 150, 105, .24);
+}
+
+html[data-dm-theme="light"] .perf-action-btn:hover,
+html[data-dm-theme="light"] .cust-action-btn:hover {
+    color: #065f46;
+    background: rgba(5, 150, 105, .15);
+    border-color: rgba(5, 150, 105, .34);
+}
+
+html[data-dm-theme="light"] .perf-action-btn.secondary {
+    color: #475569;
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, .12);
+}
+
+html[data-dm-theme="light"] .perf-action-btn:disabled,
+html[data-dm-theme="light"] .cust-action-btn:disabled {
+    opacity: .62;
+}
+
+html[data-dm-theme="light"] .perf-kpi-note,
+html[data-dm-theme="light"] .perf-history-summary-note,
+html[data-dm-theme="light"] .perf-history-foot,
+html[data-dm-theme="light"] .perf-history-foot-hint,
+html[data-dm-theme="light"] .perf-panel-sub,
+html[data-dm-theme="light"] .perf-section-caption,
+html[data-dm-theme="light"] .cust-card-sub,
+html[data-dm-theme="light"] .cust-health-note,
+html[data-dm-theme="light"] .cust-health-foot,
+html[data-dm-theme="light"] .cust-nohistory-sub,
+html[data-dm-theme="light"] .cust-nohistory-insight,
+html[data-dm-theme="light"] .cust-abc-period,
+html[data-dm-theme="light"] .cust-abc-table-note,
+html[data-dm-theme="light"] .cust-ranking-summary,
+html[data-dm-theme="light"] .cust-ranking-footer,
+html[data-dm-theme="light"] .cust-next-text {
+    color: #526174;
+}
+
+/* Evolução do faturamento: eixo, valores e ponto do período atual. */
+html[data-dm-theme="light"] .perf-history-point-value {
+    fill: #475569;
+}
+
+html[data-dm-theme="light"] .perf-history-axis-text,
+html[data-dm-theme="light"] .perf-history-axis-value {
+    fill: #526174;
+}
+
+html[data-dm-theme="light"] .perf-history-summary-label {
+    color: #526174;
+}
+
+html[data-dm-theme="light"] .perf-history-summary-period {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .perf-history-summary-divider {
+    background: rgba(15, 23, 42, .12);
+}
+
+/* Tooltip ainda possuía várias cores desenhadas especificamente para fundo escuro. */
+html[data-dm-theme="light"] .perf-history-tooltip {
+    background: rgba(255, 255, 255, .99);
+    border-color: rgba(15, 23, 42, .14);
+    color: #334155;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, .16);
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-period {
+    color: #0f172a;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-dates,
+html[data-dm-theme="light"] .perf-history-tooltip-label,
+html[data-dm-theme="light"] .perf-history-tooltip-comp {
+    color: #64748b;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-grid {
+    border-top-color: rgba(15, 23, 42, .09);
+    border-bottom-color: rgba(15, 23, 42, .09);
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-value {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-value.primary {
+    color: #047857;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-comp strong {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-comp strong.is-positive {
+    color: #047857;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-comp strong.is-negative {
+    color: #dc2626;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-comp strong.is-neutral {
+    color: #b45309;
+}
+
+html[data-dm-theme="light"] .perf-history-tooltip-badge {
+    color: #b45309;
+    background: rgba(245, 158, 11, .10);
+    border-color: rgba(180, 83, 9, .20);
+}
+
+/* Clientes: pequenas ações e textos auxiliares. */
+html[data-dm-theme="light"] .cust-nohistory-toggle,
+html[data-dm-theme="light"] .cust-nohistory-chevron {
+    color: #526174;
+}
+
+html[data-dm-theme="light"] .cust-abc-meta,
+html[data-dm-theme="light"] .cust-abc-rule,
+html[data-dm-theme="light"] .cust-abc-seller,
+html[data-dm-theme="light"] .cust-abc-client-share {
+    color: #526174;
+}
