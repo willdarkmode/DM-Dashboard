@@ -61,3 +61,6 @@ A V2.25.1 corrige a limitação de retorno do `executeQuery()` na aba Estoque & 
 
 
 A V2.26.0 melhora a experiência da aba Estoque & Compras: tipografia e espaçamentos maiores, quatro blocos analíticos com linguagens visuais distintas, ordenação crescente/decrescente em todas as colunas da tabela e seleção de 25/50/100 linhas por página. A ordenação é executada no Oracle para considerar toda a base, não apenas a página visível.
+
+
+A V2.26.1 reduz redundâncias da aba Estoque & Compras: o bloco de capital vira uma leitura executiva por decisão e o antigo ranking por família é substituído por produtos de maior valor para revisão, com atalho direto para a tabela.
