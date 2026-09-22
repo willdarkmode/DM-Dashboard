@@ -902,8 +902,9 @@ ORDER BY RN`;
                     '<small>' + escapeHtml(marca) + ' · ' + escapeHtml(cls) + '</small>' +
                 '</span>' +
                 '<span class="stock-review-metrics">' +
+                    '<em>Capital em estoque</em>' +
                     '<b>' + brl(row.M2) + '</b>' +
-                    '<small>Cob. ' + coverage + ' · Demanda ' + num(row.M5,2) + '/mês</small>' +
+                    '<small>Estoque ' + num(row.M3,2) + ' un. · Cob. ' + coverage + ' · Demanda ' + num(row.M5,2) + '/mês</small>' +
                 '</span>' +
                 '</button>';
         }).join("");
@@ -1118,7 +1119,7 @@ ORDER BY RN`;
         console.error("[DM-DASHBOARD][Estoque][Tabela]", e);
         setText("stockTableSummary", "Erro ao consultar produtos");
         var tbody = document.getElementById("stockTableBody");
-        if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="stock-empty-cell">Não foi possível carregar a tabela. Consulte o console (F12).</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="stock-empty-cell">Não foi possível carregar a tabela. Consulte o console (F12).</td></tr>';
     }
 
     var searchTimer = null;
