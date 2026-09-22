@@ -5362,3 +5362,15 @@ html[data-dm-theme="light"] .stock-tooltip-demand .panels { background: #ecfdf5;
     .stock-origin-head { align-items: flex-start; flex-direction: column; }
     .stock-origin-cards { grid-template-columns: 1fr; }
 }
+
+.stock-review-metrics em {
+    display: block;
+    margin-bottom: 2px;
+    color: #7f90a5;
+    font-size: 8.5px;
+    font-style: normal;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+html[data-dm-theme="light"] .stock-review-metrics em { color: #64748b; }
