@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — V2.23.1
+ * DM Dashboard — V2.24.0
  *
  * Arquitetura consolidada:
  * - um único JavaScript de aplicação
@@ -9,7 +9,7 @@
  * Regra financeira validada no DBExplorer em 15/09/2026.
  */
 var DMRules = {
-    version: "2.23.1",
+    version: "2.24.0",
     companies: [1, 2, 3],
     saleTops: [
         8, 2011, 2019, 2022, 2029, 2059, 2073,
@@ -3824,6 +3824,7 @@ ORDER BY ORDEM`;
 (function () {
     var PAGE_KEY = "_dm_dashboard_page";
     var TV_KEY = "_dm_dashboard_tv_mode";
+    var THEME_KEY = "_dm_dashboard_theme";
     var allowedPages = ["overview", "performance", "customers", "brands"];
     var titles = {
         overview: "Visão Geral",
@@ -3842,6 +3843,37 @@ ORDER BY ORDEM`;
 
     function isAllowedPage(page) {
         return allowedPages.indexOf(page) !== -1;
+    }
+
+    function updateThemeButton(theme) {
+        var button = document.getElementById("dmThemeBtn");
+        var label = document.getElementById("dmThemeLabel");
+        var isLight = theme === "light";
+        var actionText = isLight ? "Tema escuro" : "Tema claro";
+        var ariaText = isLight ? "Ativar tema escuro" : "Ativar tema claro";
+
+        if (label) label.textContent = actionText;
+        if (button) {
+            button.setAttribute("title", ariaText);
+            button.setAttribute("aria-label", ariaText);
+            button.setAttribute("aria-pressed", isLight ? "true" : "false");
+        }
+    }
+
+    function setTheme(theme, persist) {
+        var normalized = theme === "light" ? "light" : "dark";
+        document.documentElement.setAttribute("data-dm-theme", normalized);
+        document.body.classList.toggle("dm-light-theme", normalized === "light");
+        updateThemeButton(normalized);
+
+        if (persist !== false) {
+            safeStorageSet(THEME_KEY, normalized);
+        }
+    }
+
+    function toggleTheme() {
+        var current = document.documentElement.getAttribute("data-dm-theme") === "light" ? "light" : "dark";
+        setTheme(current === "light" ? "dark" : "light");
     }
 
     function setActivePage(page, persist) {
@@ -3906,6 +3938,11 @@ ORDER BY ORDEM`;
         });
     }
 
+    var themeBtn = document.getElementById("dmThemeBtn");
+    if (themeBtn) {
+        themeBtn.addEventListener("click", toggleTheme);
+    }
+
     var tvBtn = document.getElementById("dmTvModeBtn");
     if (tvBtn) {
         tvBtn.addEventListener("click", function () {
@@ -3937,7 +3974,10 @@ ORDER BY ORDEM`;
     var savedPage = safeStorageGet(PAGE_KEY);
     var initialPage = isAllowedPage(hashPage) ? hashPage : (isAllowedPage(savedPage) ? savedPage : "overview");
     var savedTvMode = safeStorageGet(TV_KEY) === "1";
+    var savedTheme = safeStorageGet(THEME_KEY);
+    var initialTheme = savedTheme === "light" ? "light" : "dark";
 
+    setTheme(initialTheme, false);
     setActivePage(savedTvMode ? "overview" : initialPage, false);
     setTvMode(savedTvMode, false);
 })();
