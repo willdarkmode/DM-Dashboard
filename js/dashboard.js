@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — V2.24.2
+ * DM Dashboard — V2.25.0
  *
  * Arquitetura consolidada:
  * - um único JavaScript de aplicação
@@ -9,7 +9,7 @@
  * Regra financeira validada no DBExplorer em 15/09/2026.
  */
 var DMRules = {
-    version: "2.24.2",
+    version: "2.25.0",
     companies: [1, 2, 3],
     saleTops: [
         8, 2011, 2019, 2022, 2029, 2059, 2073,
@@ -53,7 +53,7 @@ console.info(
 );
 
 /*
- * DM Dashboard — V2.24.2 (consolidado)
+ * DM Dashboard — V2.25.0 (consolidado)
  * Ordem preservada da versão funcional:
  *   1) módulos e navegação (dashboard.js)
  *   2) motor da Visão Geral (antigo tv.js)
@@ -3825,12 +3825,13 @@ ORDER BY ORDEM`;
     var PAGE_KEY = "_dm_dashboard_page";
     var TV_KEY = "_dm_dashboard_tv_mode";
     var THEME_KEY = "_dm_dashboard_theme";
-    var allowedPages = ["overview", "performance", "customers", "brands"];
+    var allowedPages = ["overview", "performance", "customers", "brands", "stock"];
     var titles = {
         overview: "Visão Geral",
         performance: "Desempenho Comercial",
         customers: "Clientes",
-        brands: "Marcas e Produtos"
+        brands: "Marcas e Produtos",
+        stock: "Estoque & Compras"
     };
 
     function safeStorageGet(key) {
@@ -3906,6 +3907,10 @@ ORDER BY ORDEM`;
 
         if (page === "brands" && window.DMBrands && typeof window.DMBrands.ensureLoaded === "function") {
             window.DMBrands.ensureLoaded();
+        }
+
+        if (page === "stock" && window.DMStock && typeof window.DMStock.ensureLoaded === "function") {
+            window.DMStock.ensureLoaded();
         }
 
         if (persist !== false) {
