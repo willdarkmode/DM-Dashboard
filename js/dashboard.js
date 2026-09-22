@@ -53,7 +53,7 @@ console.info(
 );
 
 /*
- * DM Dashboard — V2.23.1 (consolidado)
+ * DM Dashboard — V2.24.0 (consolidado)
  * Ordem preservada da versão funcional:
  *   1) módulos e navegação (dashboard.js)
  *   2) motor da Visão Geral (antigo tv.js)
