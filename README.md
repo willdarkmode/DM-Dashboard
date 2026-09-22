@@ -58,3 +58,6 @@ A aba oferece KPIs clicáveis, distribuição do capital, sinais de abasteciment
 
 
 A V2.25.1 corrige a limitação de retorno do `executeQuery()` na aba Estoque & Compras: KPIs e gráficos passam a ser agregados diretamente no Oracle, enquanto a tabela usa paginação no banco.
+
+
+A V2.26.0 melhora a experiência da aba Estoque & Compras: tipografia e espaçamentos maiores, quatro blocos analíticos com linguagens visuais distintas, ordenação crescente/decrescente em todas as colunas da tabela e seleção de 25/50/100 linhas por página. A ordenação é executada no Oracle para considerar toda a base, não apenas a página visível.
