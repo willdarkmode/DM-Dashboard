@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.24.2"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.25.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.24.2: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.25.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -75,6 +75,13 @@
                     <svg viewBox="0 0 24 24"><path d="M20.59 13.41 11 3.83V3H4v7h.83l9.58 9.59a2 2 0 0 0 2.82 0l3.36-3.36a2 2 0 0 0 0-2.82z"/><circle cx="7.5" cy="6.5" r="1"/></svg>
                 </span>
                 <span class="dm-nav-label">Marcas</span>
+            </button>
+
+            <button class="dm-nav-item" type="button" data-page="stock" title="Estoque & Compras" aria-label="Estoque & Compras">
+                <span class="dm-nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M3 7 12 3l9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/><path d="M17 13h4"/><path d="M19 11v4"/></svg>
+                </span>
+                <span class="dm-nav-label">Estoque</span>
             </button>
         </nav>
 
@@ -970,6 +977,182 @@
                 </div>
             </div>
         </section>
+
+        <!-- 5. ESTOQUE & COMPRAS — V2.25.0 / Inteligência de Estoque -->
+        <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
+            <div class="dm-module-wrap">
+                <div class="dm-module-head stock-head">
+                    <div>
+                        <div class="dm-module-kicker">Inteligência de Estoque</div>
+                        <h1 class="dm-module-title">Estoque & Compras</h1>
+                        <p class="dm-module-desc">Visão gerencial para entender onde está o capital, quais itens correm risco de ruptura e se as compras em aberto são coerentes com a demanda comercial e de produção.</p>
+                    </div>
+                    <div class="perf-head-side">
+                        <div class="dm-module-status" id="stockHeaderStatus">Estoque & Compras · <span data-dm-version></span></div>
+                        <div class="perf-update-time" id="stockUpdatedAt">Aguardando primeira consulta</div>
+                    </div>
+                </div>
+
+                <div class="stock-toolbar">
+                    <div class="stock-toolbar-copy" id="stockContext">Base consolidada · empresas 1, 2 e 3 · demanda móvel 90D / 12M</div>
+                    <button class="perf-action-btn secondary stock-refresh-btn" id="stockRefreshBtn" type="button" title="Atualizar dados" aria-label="Atualizar dados">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg>
+                    </button>
+                </div>
+
+                <div class="stock-kpis" aria-label="Indicadores principais de estoque e compras">
+                    <button class="stock-kpi stock-kpi-total" type="button" data-stock-quick="ALL">
+                        <span class="stock-kpi-label">Estoque novo</span>
+                        <strong class="stock-kpi-value" id="stockKpiTotal">R$ —</strong>
+                        <span class="stock-kpi-note"><b id="stockKpiSkuCount">—</b> SKUs na base</span>
+                    </button>
+                    <button class="stock-kpi stock-kpi-dark" type="button" data-stock-quick="SEM GIRO 12M">
+                        <span class="stock-kpi-label">Sem giro 12M</span>
+                        <strong class="stock-kpi-value" id="stockKpiNoMove">R$ —</strong>
+                        <span class="stock-kpi-note"><b id="stockKpiNoMoveCount">—</b> SKUs</span>
+                    </button>
+                    <button class="stock-kpi stock-kpi-blue" type="button" data-stock-quick="EXCESSO PROVAVEL">
+                        <span class="stock-kpi-label">Excesso provável</span>
+                        <strong class="stock-kpi-value" id="stockKpiExcess">R$ —</strong>
+                        <span class="stock-kpi-note"><b id="stockKpiExcessCount">—</b> SKUs recorrentes</span>
+                    </button>
+                    <button class="stock-kpi stock-kpi-red" type="button" data-stock-supply-quick="RISCO SEM COMPRA ABERTA">
+                        <span class="stock-kpi-label">Risco sem compra</span>
+                        <strong class="stock-kpi-value" id="stockKpiRiskNoPurchase">—</strong>
+                        <span class="stock-kpi-note">SKUs com cobertura &lt; 1 mês</span>
+                    </button>
+                    <button class="stock-kpi stock-kpi-amber" type="button" data-stock-supply-quick="COMPRA AINDA INSUFICIENTE">
+                        <span class="stock-kpi-label">Compra insuficiente</span>
+                        <strong class="stock-kpi-value" id="stockKpiInsufficient">—</strong>
+                        <span class="stock-kpi-note">Compra aberta e cobertura futura &lt; 1 mês</span>
+                    </button>
+                    <button class="stock-kpi stock-kpi-purple" type="button" data-stock-supply-quick="COMPRA SEM DEMANDA 12M - AVALIAR">
+                        <span class="stock-kpi-label">Compra sem demanda</span>
+                        <strong class="stock-kpi-value" id="stockKpiNoDemandPurchase">—</strong>
+                        <span class="stock-kpi-note">Compra aberta sem saída bruta 12M</span>
+                    </button>
+                </div>
+
+                <div class="stock-grid stock-grid-main">
+                    <article class="stock-panel">
+                        <div class="stock-panel-head">
+                            <div>
+                                <div class="stock-panel-title">Onde está o capital</div>
+                                <div class="stock-panel-sub">Valor do estoque novo por situação. Clique em uma faixa para filtrar a tabela.</div>
+                            </div>
+                        </div>
+                        <div class="stock-bars" id="stockCapitalBars">
+                            <div class="stock-empty">Carregando distribuição...</div>
+                        </div>
+                    </article>
+
+                    <article class="stock-panel">
+                        <div class="stock-panel-head">
+                            <div>
+                                <div class="stock-panel-title">Situação do abastecimento</div>
+                                <div class="stock-panel-sub">Quantidade de SKUs conforme estoque livre, compras em aberto e cobertura projetada.</div>
+                            </div>
+                        </div>
+                        <div class="stock-bars stock-bars-supply" id="stockSupplyBars">
+                            <div class="stock-empty">Carregando sinais...</div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="stock-grid stock-grid-rank">
+                    <article class="stock-panel">
+                        <div class="stock-panel-head">
+                            <div>
+                                <div class="stock-panel-title">Capital a revisar por marca</div>
+                                <div class="stock-panel-sub">Sem giro + excesso provável + baixa recorrência com estoque alto.</div>
+                            </div>
+                        </div>
+                        <div class="stock-ranking" id="stockBrandRanking"></div>
+                    </article>
+
+                    <article class="stock-panel">
+                        <div class="stock-panel-head">
+                            <div>
+                                <div class="stock-panel-title">Capital a revisar por família</div>
+                                <div class="stock-panel-sub">Grupos de produto que mais concentram estoque para análise.</div>
+                            </div>
+                        </div>
+                        <div class="stock-ranking" id="stockGroupRanking"></div>
+                    </article>
+                </div>
+
+                <article class="stock-panel stock-table-panel" id="stockTablePanel">
+                    <div class="stock-panel-head stock-table-head">
+                        <div>
+                            <div class="stock-panel-title">Produtos para investigação</div>
+                            <div class="stock-panel-sub" id="stockTableSummary">Aguardando dados...</div>
+                        </div>
+                        <button class="stock-clear-filters" id="stockClearFilters" type="button">Limpar filtros</button>
+                    </div>
+
+                    <div class="stock-filters">
+                        <label class="stock-filter stock-filter-search">
+                            <span>Buscar produto</span>
+                            <input class="perf-control" id="stockSearch" type="search" placeholder="Código ou descrição" />
+                        </label>
+                        <label class="stock-filter">
+                            <span>Situação</span>
+                            <select class="perf-control" id="stockClassFilter"><option value="">Todas</option></select>
+                        </label>
+                        <label class="stock-filter">
+                            <span>Abastecimento</span>
+                            <select class="perf-control" id="stockSupplyFilter"><option value="">Todos</option></select>
+                        </label>
+                        <label class="stock-filter">
+                            <span>Marca</span>
+                            <select class="perf-control" id="stockBrandFilter"><option value="">Todas</option></select>
+                        </label>
+                        <label class="stock-filter">
+                            <span>Família</span>
+                            <select class="perf-control" id="stockGroupFilter"><option value="">Todas</option></select>
+                        </label>
+                    </div>
+
+                    <div class="stock-table-wrap">
+                        <table class="stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Marca / família</th>
+                                    <th class="num">Físico</th>
+                                    <th class="num">Reservado</th>
+                                    <th class="num">Livre</th>
+                                    <th class="num">Compra</th>
+                                    <th class="num">Demanda/mês</th>
+                                    <th class="num">Cob. atual</th>
+                                    <th class="num">Cob. futura</th>
+                                    <th>Recorrência</th>
+                                    <th>Situação</th>
+                                    <th>Abastecimento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTableBody">
+                                <tr><td colspan="12" class="stock-empty-cell">Carregando inteligência de estoque...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stock-table-footer">
+                        <span id="stockTableRange">—</span>
+                        <div class="stock-pagination">
+                            <button id="stockPrevBtn" type="button">Anterior</button>
+                            <span id="stockPageLabel">Página —</span>
+                            <button id="stockNextBtn" type="button">Próxima</button>
+                        </div>
+                    </div>
+                </article>
+
+                <div class="stock-method-note">
+                    <strong>Leitura da V1:</strong> estoque físico positivo é separado de saldos negativos; itens usados e Delta Fábrica ficam fora do estoque novo disponível; demanda combina vendas válidas e material entregue à produção; compra firme considera a TOP 2000. Produtos esporádicos não são classificados automaticamente como excesso.
+                </div>
+            </div>
+        </section>
+
     </main>
 </div>
 
@@ -993,8 +1176,8 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.24.2: JavaScript único (regras + módulos + navegação + Visão Geral) -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.24.2"
+<!-- V2.25.0: JavaScript único (regras + módulos + navegação + Visão Geral) -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.25.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
