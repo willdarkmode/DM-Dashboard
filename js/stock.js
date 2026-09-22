@@ -716,8 +716,7 @@ ORDER BY RN`;
             {key:"COMPRA AINDA INSUFICIENTE",label:"Compra insuficiente",tone:"warning",hint:"Compra aberta, mas cobertura futura < 1 mês"},
             {key:"COMPRA EM ABERTO REDUZ RISCO",label:"Compra reduz o risco",tone:"success",hint:"Pedido em aberto leva cobertura para ≥ 1 mês"},
             {key:"COMPRA SEM DEMANDA 12M - AVALIAR",label:"Compra sem demanda",tone:"purple",hint:"Compra aberta sem saída bruta em 12 meses"},
-            {key:"COMPRA EM ABERTO",label:"Compra em aberto",tone:"info",hint:"Pedido aberto sem sinal crítico"},
-            {key:"SEM COMPRA ABERTA",label:"Sem compra aberta",tone:"neutral",hint:"Demais produtos sem pedido aberto"}
+            {key:"COMPRA EM ABERTO",label:"Compra em aberto",tone:"info",hint:"Pedido aberto sem sinal crítico"}
         ];
 
         el.innerHTML = defs.map(function (d) {
