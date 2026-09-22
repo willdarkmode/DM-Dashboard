@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.24.0
+## Arquitetura V2.24.1
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -24,7 +24,7 @@ A aplicação usa uma estrutura enxuta, sem loader intermediário:
 - `css/dashboard.css`: estilos consolidados;
 - `js/dashboard.js`: regras globais, consultas e módulos da aplicação.
 
-A V2.24.0 adiciona alternância entre tema escuro e claro pelo menu lateral. O escuro continua sendo o padrão e a escolha do usuário é persistida no `localStorage` (`_dm_dashboard_theme`). O tema escolhido também é mantido no Modo TV.
+A V2.24.0 adiciona alternância entre tema escuro e claro pelo menu lateral. O escuro continua sendo o padrão e a escolha do usuário é persistida no `localStorage` (`_dm_dashboard_theme`). O tema escolhido também é mantido no Modo TV.\n\nA V2.24.1 refina o contraste do tema claro em textos auxiliares, estados de filtro e tooltip do gráfico, sem alterar SQLs ou regras de negócio.
 
 A regra financeira oficial fica centralizada no início de `dashboard.js` em `DMRules`. As consultas financeiras usam diretamente `DM_RULES_SQL`, sem interceptação ou reescrita de SQL em tempo de execução.
 
