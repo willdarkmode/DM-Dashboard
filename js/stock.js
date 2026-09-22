@@ -445,24 +445,35 @@ WHERE ROWNUM <= 8
 UNION ALL
 
 SELECT
-    'GROUP' AS TIPO_REGISTRO,
+    'REVIEW' AS TIPO_REGISTRO,
     X.CHAVE,
-    X.QTD AS M1,
+    X.CODPROD AS M1,
     X.VALOR AS M2,
-    0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+    X.ESTOQUE AS M3,
+    X.COBERTURA AS M4,
+    X.DEMANDA AS M5,
+    X.MESES AS M6,
+    0 AS M7, 0 AS M8, 0 AS M9
 FROM (
     SELECT
-        NVL(NULLIF(TRIM(DESCRGRUPOPROD),''),'Sem grupo') AS CHAVE,
-        COUNT(*) AS QTD,
-        SUM(VALOR_ESTOQUE_NOVO) AS VALOR
+        TO_CHAR(CODPROD) || '¦' ||
+        NVL(DESCRPROD,'') || '¦' ||
+        NVL(NULLIF(TRIM(MARCA),''),'Sem marca') || '¦' ||
+        CLASSIFICACAO_ESTOQUE AS CHAVE,
+        CODPROD,
+        VALOR_ESTOQUE_NOVO AS VALOR,
+        ESTOQUE_NOVO_FISICO AS ESTOQUE,
+        COBERTURA_ATUAL_MESES AS COBERTURA,
+        DEMANDA_REFERENCIA AS DEMANDA,
+        MESES_COM_DEMANDA_12M AS MESES
     FROM DATASET
     WHERE CLASSIFICACAO_ESTOQUE IN (
         'SEM GIRO 12M',
         'EXCESSO PROVAVEL',
         'BAIXA RECORRENCIA - ESTOQUE ALTO'
     )
-    GROUP BY NVL(NULLIF(TRIM(DESCRGRUPOPROD),''),'Sem grupo')
-    ORDER BY VALOR DESC
+      AND VALOR_ESTOQUE_NOVO > 0
+    ORDER BY VALOR_ESTOQUE_NOVO DESC
 ) X
 WHERE ROWNUM <= 8
 
@@ -659,51 +670,61 @@ ORDER BY RN`;
         var el = document.getElementById("stockCapitalBars");
         if (!el) return;
 
-        var order = [
-            "SEM GIRO 12M",
-            "EXCESSO PROVAVEL",
-            "BAIXA RECORRENCIA - ESTOQUE ALTO",
-            "BAIXA RECORRENCIA - AVALIAR",
-            "SAUDAVEL",
-            "ATENCAO",
-            "RISCO DE RUPTURA",
-            "CRITICO - SEM ESTOQUE LIVRE"
-        ];
-        var labels = {
-            "SEM GIRO 12M":"Sem giro 12M",
-            "EXCESSO PROVAVEL":"Excesso provável",
-            "BAIXA RECORRENCIA - ESTOQUE ALTO":"Baixa recorrência · estoque alto",
-            "BAIXA RECORRENCIA - AVALIAR":"Baixa recorrência · avaliar",
-            "SAUDAVEL":"Saudável",
-            "ATENCAO":"Atenção",
-            "RISCO DE RUPTURA":"Risco de ruptura",
-            "CRITICO - SEM ESTOQUE LIVRE":"Crítico"
-        };
-        var className = {
-            "SEM GIRO 12M":"is-dark",
-            "EXCESSO PROVAVEL":"is-blue",
-            "BAIXA RECORRENCIA - ESTOQUE ALTO":"is-purple",
-            "BAIXA RECORRENCIA - AVALIAR":"is-violet",
-            "SAUDAVEL":"is-green",
-            "ATENCAO":"is-amber",
-            "RISCO DE RUPTURA":"is-red",
-            "CRITICO - SEM ESTOQUE LIVRE":"is-red"
-        };
-
-        var total = metaList("CLASS").reduce(function (acc, row) { return acc + n(row.M2); }, 0);
-        var rows = order.map(function (key) {
+        function classValue(key) {
             var row = meta("CLASS", key);
-            if (!row || n(row.M2) <= 0) return null;
-            return { key:key, label:labels[key], value:n(row.M2), count:n(row.M1), cls:className[key] || "" };
-        }).filter(Boolean);
+            return row ? n(row.M2) : 0;
+        }
+        function classCount(key) {
+            var row = meta("CLASS", key);
+            return row ? n(row.M1) : 0;
+        }
 
-        el.innerHTML = rows.map(function (r) {
+        var summary = meta("SUMMARY", "TOTAL") || {};
+        var total = n(summary.M2);
+
+        var groups = [
+            {
+                key:"REVIEW",
+                label:"Capital para revisar",
+                hint:"Sem giro + excesso provável + baixa recorrência com estoque alto",
+                value:classValue("SEM GIRO 12M") + classValue("EXCESSO PROVAVEL") + classValue("BAIXA RECORRENCIA - ESTOQUE ALTO"),
+                count:classCount("SEM GIRO 12M") + classCount("EXCESSO PROVAVEL") + classCount("BAIXA RECORRENCIA - ESTOQUE ALTO"),
+                cls:"is-red"
+            },
+            {
+                key:"LOW",
+                label:"Baixa recorrência · avaliar",
+                hint:"Itens esporádicos que exigem decisão comercial, não corte automático",
+                value:classValue("BAIXA RECORRENCIA - AVALIAR"),
+                count:classCount("BAIXA RECORRENCIA - AVALIAR"),
+                cls:"is-purple"
+            },
+            {
+                key:"HEALTHY",
+                label:"Estoque saudável",
+                hint:"Cobertura compatível com o ritmo de demanda",
+                value:classValue("SAUDAVEL"),
+                count:classCount("SAUDAVEL"),
+                cls:"is-green"
+            },
+            {
+                key:"SHORT",
+                label:"Curto / risco",
+                hint:"Atenção + risco de ruptura + crítico sem estoque livre",
+                value:classValue("ATENCAO") + classValue("RISCO DE RUPTURA") + classValue("CRITICO - SEM ESTOQUE LIVRE"),
+                count:classCount("ATENCAO") + classCount("RISCO DE RUPTURA") + classCount("CRITICO - SEM ESTOQUE LIVRE"),
+                cls:"is-amber"
+            }
+        ];
+
+        el.innerHTML = groups.map(function (r) {
             var pct = total > 0 ? (r.value / total) * 100 : 0;
-            return '<button class="stock-capital-card ' + r.cls + '" type="button" data-stock-bar-class="' + escapeHtml(r.key) + '">' +
-                '<span class="stock-capital-name">' + escapeHtml(r.label) + '</span>' +
+            return '<article class="stock-exec-card ' + r.cls + '">' +
+                '<span class="stock-exec-label">' + escapeHtml(r.label) + '</span>' +
                 '<strong>' + brl(r.value) + '</strong>' +
-                '<span class="stock-capital-meta"><b>' + num(pct,1) + '%</b> do estoque · ' + intFmt(r.count) + ' SKUs</span>' +
-                '</button>';
+                '<span class="stock-exec-share">' + num(pct,1) + '% do estoque · ' + intFmt(r.count) + ' SKUs</span>' +
+                '<small>' + escapeHtml(r.hint) + '</small>' +
+                '</article>';
         }).join("");
     }
 
@@ -746,18 +767,6 @@ ORDER BY RN`;
             return;
         }
 
-        if (type === "GROUP") {
-            el.innerHTML = rows.map(function (r, i) {
-                return '<article class="stock-family-card">' +
-                    '<span class="stock-family-rank">#' + (i + 1) + '</span>' +
-                    '<strong>' + escapeHtml(r.key) + '</strong>' +
-                    '<b>' + brl(r.value) + '</b>' +
-                    '<small>' + intFmt(r.count) + ' SKUs para revisar</small>' +
-                    '</article>';
-            }).join("");
-            return;
-        }
-
         var max = rows[0].value || 1;
         el.innerHTML = rows.map(function (r, i) {
             return '<div class="stock-rank-row">' +
@@ -766,6 +775,38 @@ ORDER BY RN`;
                 '<span class="stock-rank-track"><span style="width:' + Math.max(3, r.value / max * 100) + '%"></span></span>' +
                 '<small>' + intFmt(r.count) + ' SKUs</small></span>' +
                 '<strong>' + brl(r.value) + '</strong></div>';
+        }).join("");
+    }
+
+    function renderReviewProducts() {
+        var el = document.getElementById("stockGroupRanking");
+        if (!el) return;
+
+        var rows = metaList("REVIEW");
+        if (!rows.length) {
+            el.innerHTML = '<div class="stock-empty">Nenhum produto prioritário encontrado.</div>';
+            return;
+        }
+
+        el.innerHTML = rows.map(function (row, i) {
+            var parts = String(row.CHAVE || "").split("¦");
+            var cod = parts[0] || String(row.M1 || "");
+            var desc = parts[1] || "Produto";
+            var marca = parts[2] || "Sem marca";
+            var cls = parts[3] || "";
+            var coverage = row.M4 == null || row.M4 === "" ? "—" : num(row.M4,1) + " m";
+
+            return '<button class="stock-review-product" type="button" data-stock-review-product="' + escapeHtml(cod) + '">' +
+                '<span class="stock-review-rank">#' + (i + 1) + '</span>' +
+                '<span class="stock-review-main">' +
+                    '<strong>' + escapeHtml(String(cod).padStart(6,"0")) + ' · ' + escapeHtml(desc) + '</strong>' +
+                    '<small>' + escapeHtml(marca) + ' · ' + escapeHtml(cls) + '</small>' +
+                '</span>' +
+                '<span class="stock-review-metrics">' +
+                    '<b>' + brl(row.M2) + '</b>' +
+                    '<small>Cob. ' + coverage + ' · Demanda ' + num(row.M5,2) + '/mês</small>' +
+                '</span>' +
+                '</button>';
         }).join("");
     }
 
@@ -975,6 +1016,17 @@ ORDER BY RN`;
                 setFilter("stockSupplyFilter", el.getAttribute("data-stock-bar-supply"));
             }
         });
+
+        document.addEventListener("click", function (e) {
+            var product = e.target.closest ? e.target.closest("[data-stock-review-product]") : null;
+            if (!product) return;
+            clearFilters(false);
+            var search = document.getElementById("stockSearch");
+            if (search) search.value = product.getAttribute("data-stock-review-product") || "";
+            loadTable(true).catch(handleTableError);
+            var panel = document.getElementById("stockTablePanel");
+            if (panel && panel.scrollIntoView) panel.scrollIntoView({behavior:"smooth",block:"start"});
+        });
     }
 
     function renderMeta() {
@@ -982,7 +1034,7 @@ ORDER BY RN`;
         renderCapitalBars();
         renderSupplyBars();
         renderRanking("stockBrandRanking","BRAND");
-        renderRanking("stockGroupRanking","GROUP");
+        renderReviewProducts();
         fillMetaSelect("stockClassFilter","CLASS","Todas");
         fillMetaSelect("stockSupplyFilter","SUPPLY","Todos");
         fillMetaSelect("stockBrandFilter","OPT_BRAND","Todas");
