@@ -55,3 +55,6 @@ A nova aba consolida estoque físico, reservado, livre, compras firmes em aberto
 Classificações principais: Sem Giro 12M, Baixa Recorrência, Excesso Provável, Saudável, Atenção, Risco de Ruptura e Crítico. O abastecimento é analisado separadamente: Risco sem Compra Aberta, Compra Ainda Insuficiente, Compra em Aberto Reduz Risco, Compra sem Demanda 12M e Compra em Aberto.
 
 A aba oferece KPIs clicáveis, distribuição do capital, sinais de abastecimento, rankings por marca/família e tabela por SKU com filtros.
+
+
+A V2.25.1 corrige a limitação de retorno do `executeQuery()` na aba Estoque & Compras: KPIs e gráficos passam a ser agregados diretamente no Oracle, enquanto a tabela usa paginação no banco.

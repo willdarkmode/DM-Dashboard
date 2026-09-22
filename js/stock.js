@@ -8,7 +8,8 @@
     var loadedOnce = false;
     var loading = false;
     var allRows = [];
-    var filteredRows = [];
+    var metaRows = [];
+    var totalFiltered = 0;
     var page = 1;
     var pageSize = 25;
 
@@ -351,127 +352,339 @@ ORDER BY
     F.CODPROD`;
     }
 
-    function countWhere(field, value) {
-        return allRows.reduce(function (acc, r) {
-            return acc + (String(r[field] || "") === value ? 1 : 0);
-        }, 0);
+    /*
+     * executeQuery() do componente HTML5 limita retornos grandes.
+     * A consulta validada tem mais de 4 mil SKUs, então a V2.25.1
+     * não calcula mais KPIs no navegador a partir da lista completa.
+     *
+     * O dataset é reutilizado em duas consultas:
+     * 1) metadados agregados (KPIs, gráficos, rankings e filtros);
+     * 2) página atual da tabela, com paginação feita no Oracle.
+     */
+    function sqlDatasetPrefix() {
+        var full = sqlStockIntelligence();
+        var selectToken = "\nSELECT\n    F.CODPROD,";
+        var selectIndex = full.lastIndexOf(selectToken);
+        var orderIndex = full.lastIndexOf("\nORDER BY");
+
+        if (selectIndex < 0 || orderIndex < 0 || orderIndex <= selectIndex) {
+            throw new Error("Não foi possível montar o dataset de Estoque & Compras.");
+        }
+
+        var prefix = full.slice(0, selectIndex);
+        var finalSelect = full.slice(selectIndex, orderIndex);
+
+        return prefix + ",\nDATASET AS (\n" + finalSelect + "\n)\n";
     }
 
-    function sumWhere(field, value, sumField) {
-        return allRows.reduce(function (acc, r) {
-            return acc + (String(r[field] || "") === value ? n(r[sumField]) : 0);
-        }, 0);
+    function sqlDashboardMeta() {
+        var base = sqlDatasetPrefix();
+
+        return base + `
+SELECT
+    'SUMMARY' AS TIPO_REGISTRO,
+    'TOTAL' AS CHAVE,
+    COUNT(*) AS M1,
+    NVL(SUM(VALOR_ESTOQUE_NOVO),0) AS M2,
+    NVL(SUM(CASE WHEN CLASSIFICACAO_ESTOQUE = 'SEM GIRO 12M' THEN VALOR_ESTOQUE_NOVO ELSE 0 END),0) AS M3,
+    SUM(CASE WHEN CLASSIFICACAO_ESTOQUE = 'SEM GIRO 12M' THEN 1 ELSE 0 END) AS M4,
+    NVL(SUM(CASE WHEN CLASSIFICACAO_ESTOQUE = 'EXCESSO PROVAVEL' THEN VALOR_ESTOQUE_NOVO ELSE 0 END),0) AS M5,
+    SUM(CASE WHEN CLASSIFICACAO_ESTOQUE = 'EXCESSO PROVAVEL' THEN 1 ELSE 0 END) AS M6,
+    SUM(CASE WHEN SINAL_ABASTECIMENTO = 'RISCO SEM COMPRA ABERTA' THEN 1 ELSE 0 END) AS M7,
+    SUM(CASE WHEN SINAL_ABASTECIMENTO = 'COMPRA AINDA INSUFICIENTE' THEN 1 ELSE 0 END) AS M8,
+    SUM(CASE WHEN SINAL_ABASTECIMENTO = 'COMPRA SEM DEMANDA 12M - AVALIAR' THEN 1 ELSE 0 END) AS M9
+FROM DATASET
+
+UNION ALL
+
+SELECT
+    'CLASS' AS TIPO_REGISTRO,
+    CLASSIFICACAO_ESTOQUE AS CHAVE,
+    COUNT(*) AS M1,
+    NVL(SUM(VALOR_ESTOQUE_NOVO),0) AS M2,
+    0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM DATASET
+GROUP BY CLASSIFICACAO_ESTOQUE
+
+UNION ALL
+
+SELECT
+    'SUPPLY' AS TIPO_REGISTRO,
+    SINAL_ABASTECIMENTO AS CHAVE,
+    COUNT(*) AS M1,
+    0 AS M2, 0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM DATASET
+GROUP BY SINAL_ABASTECIMENTO
+
+UNION ALL
+
+SELECT
+    'BRAND' AS TIPO_REGISTRO,
+    X.CHAVE,
+    X.QTD AS M1,
+    X.VALOR AS M2,
+    0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM (
+    SELECT
+        NVL(NULLIF(TRIM(MARCA),''),'Sem marca') AS CHAVE,
+        COUNT(*) AS QTD,
+        SUM(VALOR_ESTOQUE_NOVO) AS VALOR
+    FROM DATASET
+    WHERE CLASSIFICACAO_ESTOQUE IN (
+        'SEM GIRO 12M',
+        'EXCESSO PROVAVEL',
+        'BAIXA RECORRENCIA - ESTOQUE ALTO'
+    )
+    GROUP BY NVL(NULLIF(TRIM(MARCA),''),'Sem marca')
+    ORDER BY VALOR DESC
+) X
+WHERE ROWNUM <= 8
+
+UNION ALL
+
+SELECT
+    'GROUP' AS TIPO_REGISTRO,
+    X.CHAVE,
+    X.QTD AS M1,
+    X.VALOR AS M2,
+    0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM (
+    SELECT
+        NVL(NULLIF(TRIM(DESCRGRUPOPROD),''),'Sem grupo') AS CHAVE,
+        COUNT(*) AS QTD,
+        SUM(VALOR_ESTOQUE_NOVO) AS VALOR
+    FROM DATASET
+    WHERE CLASSIFICACAO_ESTOQUE IN (
+        'SEM GIRO 12M',
+        'EXCESSO PROVAVEL',
+        'BAIXA RECORRENCIA - ESTOQUE ALTO'
+    )
+    GROUP BY NVL(NULLIF(TRIM(DESCRGRUPOPROD),''),'Sem grupo')
+    ORDER BY VALOR DESC
+) X
+WHERE ROWNUM <= 8
+
+UNION ALL
+
+SELECT
+    'OPT_BRAND' AS TIPO_REGISTRO,
+    TRIM(MARCA) AS CHAVE,
+    0 AS M1, 0 AS M2, 0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM DATASET
+WHERE TRIM(MARCA) IS NOT NULL
+GROUP BY TRIM(MARCA)
+
+UNION ALL
+
+SELECT
+    'OPT_GROUP' AS TIPO_REGISTRO,
+    TRIM(DESCRGRUPOPROD) AS CHAVE,
+    0 AS M1, 0 AS M2, 0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM DATASET
+WHERE TRIM(DESCRGRUPOPROD) IS NOT NULL
+GROUP BY TRIM(DESCRGRUPOPROD)`;
     }
 
-    function uniqueSorted(field) {
-        var map = {};
-        allRows.forEach(function (row) {
-            var v = String(row[field] == null ? "" : row[field]).trim();
-            if (v) map[v] = true;
+    function sqlLiteral(value) {
+        return "'" + String(value == null ? "" : value).replace(/'/g, "''") + "'";
+    }
+
+    function currentFilters() {
+        return {
+            search: (document.getElementById("stockSearch") || {}).value || "",
+            cls: (document.getElementById("stockClassFilter") || {}).value || "",
+            supply: (document.getElementById("stockSupplyFilter") || {}).value || "",
+            brand: (document.getElementById("stockBrandFilter") || {}).value || "",
+            group: (document.getElementById("stockGroupFilter") || {}).value || ""
+        };
+    }
+
+    function sqlTablePage() {
+        var base = sqlDatasetPrefix();
+        var f = currentFilters();
+        var where = [];
+
+        if (f.cls) where.push("D.CLASSIFICACAO_ESTOQUE = " + sqlLiteral(f.cls));
+        if (f.supply) where.push("D.SINAL_ABASTECIMENTO = " + sqlLiteral(f.supply));
+        if (f.brand) where.push("NVL(TRIM(D.MARCA),'') = " + sqlLiteral(f.brand));
+        if (f.group) where.push("NVL(TRIM(D.DESCRGRUPOPROD),'') = " + sqlLiteral(f.group));
+
+        var q = String(f.search || "").trim().toUpperCase();
+        if (q) {
+            var like = sqlLiteral("%" + q + "%");
+            where.push("(UPPER(TO_CHAR(D.CODPROD)) LIKE " + like +
+                " OR UPPER(NVL(D.DESCRPROD,'')) LIKE " + like + ")");
+        }
+
+        var startRow = ((page - 1) * pageSize) + 1;
+        var endRow = page * pageSize;
+        var whereSql = where.length ? " AND " + where.join(" AND ") : "";
+
+        return base + `,
+PAGED AS (
+    SELECT
+        D.*,
+        COUNT(*) OVER() AS TOTAL_REGISTROS,
+        ROW_NUMBER() OVER (
+            ORDER BY
+                CASE WHEN D.DEMANDA_REFERENCIA > 0 THEN 0 ELSE 1 END,
+                CASE WHEN D.DEMANDA_REFERENCIA > 0 THEN D.COBERTURA_ATUAL_MESES END,
+                D.VALOR_ESTOQUE_NOVO DESC,
+                D.CODPROD
+        ) AS RN
+    FROM DATASET D
+    WHERE 1 = 1` + whereSql + `
+)
+SELECT
+    CODPROD,
+    DESCRPROD,
+    MARCA,
+    CODGRUPOPROD,
+    DESCRGRUPOPROD,
+    ESTOQUE_NOVO_FISICO,
+    SALDO_NEGATIVO_NOVO,
+    RESERVADO_NOVO,
+    LIVRE_NOVO,
+    VALOR_ESTOQUE_NOVO,
+    COMPRA_ABERTA,
+    QTD_PEDIDOS_COMPRA_ABERTOS,
+    POSICAO_PROJETADA,
+    SAIDA_BRUTA_12M,
+    DEMANDA_REFERENCIA,
+    MESES_COM_DEMANDA_12M,
+    PERFIL_RECORRENCIA,
+    COBERTURA_ATUAL_MESES,
+    COBERTURA_PROJETADA_MESES,
+    CLASSIFICACAO_ESTOQUE,
+    SINAL_ABASTECIMENTO,
+    TOTAL_REGISTROS,
+    RN
+FROM PAGED
+WHERE RN BETWEEN ` + startRow + ` AND ` + endRow + `
+ORDER BY RN`;
+    }
+
+    function meta(type, key) {
+        for (var i = 0; i < metaRows.length; i++) {
+            var row = metaRows[i];
+            if (String(row.TIPO_REGISTRO || "") === type &&
+                (key == null || String(row.CHAVE || "") === key)) return row;
+        }
+        return null;
+    }
+
+    function metaList(type) {
+        return metaRows.filter(function (row) {
+            return String(row.TIPO_REGISTRO || "") === type;
         });
-        return Object.keys(map).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
     }
 
-    function fillSelect(id, field, allLabel) {
+    function fillMetaSelect(id, type, allLabel) {
         var el = document.getElementById(id);
         if (!el) return;
+
         var current = el.value;
-        var values = uniqueSorted(field);
+        var values = metaList(type)
+            .map(function (row) { return String(row.CHAVE || "").trim(); })
+            .filter(function (v) { return !!v; })
+            .sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+
         el.innerHTML = '<option value="">' + escapeHtml(allLabel) + '</option>' +
             values.map(function (v) {
                 return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>';
             }).join("");
+
         if (values.indexOf(current) >= 0) el.value = current;
     }
 
     function renderKpis() {
-        var totalValue = allRows.reduce(function (acc, r) { return acc + n(r.VALOR_ESTOQUE_NOVO); }, 0);
-        setText("stockKpiTotal", brl(totalValue));
-        setText("stockKpiSkuCount", intFmt(allRows.length));
-        setText("stockKpiNoMove", brl(sumWhere("CLASSIFICACAO_ESTOQUE", "SEM GIRO 12M", "VALOR_ESTOQUE_NOVO")));
-        setText("stockKpiNoMoveCount", intFmt(countWhere("CLASSIFICACAO_ESTOQUE", "SEM GIRO 12M")));
-        setText("stockKpiExcess", brl(sumWhere("CLASSIFICACAO_ESTOQUE", "EXCESSO PROVAVEL", "VALOR_ESTOQUE_NOVO")));
-        setText("stockKpiExcessCount", intFmt(countWhere("CLASSIFICACAO_ESTOQUE", "EXCESSO PROVAVEL")));
-        setText("stockKpiRiskNoPurchase", intFmt(countWhere("SINAL_ABASTECIMENTO", "RISCO SEM COMPRA ABERTA")));
-        setText("stockKpiInsufficient", intFmt(countWhere("SINAL_ABASTECIMENTO", "COMPRA AINDA INSUFICIENTE")));
-        setText("stockKpiNoDemandPurchase", intFmt(countWhere("SINAL_ABASTECIMENTO", "COMPRA SEM DEMANDA 12M - AVALIAR")));
+        var s = meta("SUMMARY", "TOTAL") || {};
+        setText("stockKpiTotal", brl(s.M2));
+        setText("stockKpiSkuCount", intFmt(s.M1));
+        setText("stockKpiNoMove", brl(s.M3));
+        setText("stockKpiNoMoveCount", intFmt(s.M4));
+        setText("stockKpiExcess", brl(s.M5));
+        setText("stockKpiExcessCount", intFmt(s.M6));
+        setText("stockKpiRiskNoPurchase", intFmt(s.M7));
+        setText("stockKpiInsufficient", intFmt(s.M8));
+        setText("stockKpiNoDemandPurchase", intFmt(s.M9));
     }
 
-    function renderBars(id, defs, field, valueMode) {
+    function renderBars(id, type, labels, valueField, isMoney, attrName) {
         var el = document.getElementById(id);
         if (!el) return;
-        var items = defs.map(function (d) {
-            var value = valueMode === "money" ? sumWhere(field, d.key, "VALOR_ESTOQUE_NOVO") : countWhere(field, d.key);
-            return { key:d.key, label:d.label, value:value };
+
+        var rows = metaList(type).map(function (row) {
+            var key = String(row.CHAVE || "");
+            return {
+                key: key,
+                label: labels[key] || key,
+                value: n(row[valueField])
+            };
         }).filter(function (x) { return x.value > 0; });
-        var max = items.reduce(function (m, x) { return Math.max(m, x.value); }, 0);
-        if (!items.length || !max) {
+
+        var max = rows.reduce(function (m, x) { return Math.max(m, x.value); }, 0);
+        if (!rows.length || max <= 0) {
             el.innerHTML = '<div class="stock-empty">Nenhum dado encontrado.</div>';
             return;
         }
-        el.innerHTML = items.map(function (it) {
-            var attr = field === "CLASSIFICACAO_ESTOQUE" ? "data-stock-bar-class" : "data-stock-bar-supply";
-            var width = Math.max(2, Math.min(100, it.value / max * 100));
-            return '<button class="stock-bar-row" type="button" ' + attr + '="' + escapeHtml(it.key) + '">' +
-                '<span class="stock-bar-top"><span class="stock-bar-name">' + escapeHtml(it.label) + '</span><strong>' +
-                (valueMode === "money" ? brl(it.value) : intFmt(it.value)) + '</strong></span>' +
+
+        el.innerHTML = rows.map(function (it) {
+            var width = Math.max(2, Math.min(100, (it.value / max) * 100));
+            return '<button class="stock-bar-row" type="button" ' + attrName + '="' + escapeHtml(it.key) + '">' +
+                '<span class="stock-bar-top"><span class="stock-bar-name">' + escapeHtml(it.label) + '</span>' +
+                '<strong>' + (isMoney ? brl(it.value) : intFmt(it.value)) + '</strong></span>' +
                 '<span class="stock-bar-track"><span class="stock-bar-fill" style="width:' + width + '%"></span></span>' +
                 '</button>';
         }).join("");
     }
 
     function renderCapitalBars() {
-        renderBars("stockCapitalBars", [
-            {key:"SEM GIRO 12M",label:"Sem giro 12M"},
-            {key:"BAIXA RECORRENCIA - AVALIAR",label:"Baixa recorrência · avaliar"},
-            {key:"BAIXA RECORRENCIA - ESTOQUE ALTO",label:"Baixa recorrência · estoque alto"},
-            {key:"EXCESSO PROVAVEL",label:"Excesso provável"},
-            {key:"SAUDAVEL",label:"Saudável"},
-            {key:"ATENCAO",label:"Atenção"},
-            {key:"RISCO DE RUPTURA",label:"Risco de ruptura"},
-            {key:"CRITICO - SEM ESTOQUE LIVRE",label:"Crítico · sem estoque livre"}
-        ], "CLASSIFICACAO_ESTOQUE", "money");
+        renderBars("stockCapitalBars", "CLASS", {
+            "SEM GIRO 12M":"Sem giro 12M",
+            "BAIXA RECORRENCIA - AVALIAR":"Baixa recorrência · avaliar",
+            "BAIXA RECORRENCIA - ESTOQUE ALTO":"Baixa recorrência · estoque alto",
+            "EXCESSO PROVAVEL":"Excesso provável",
+            "SAUDAVEL":"Saudável",
+            "ATENCAO":"Atenção",
+            "RISCO DE RUPTURA":"Risco de ruptura",
+            "CRITICO - SEM ESTOQUE LIVRE":"Crítico · sem estoque livre",
+            "AVALIAR":"Avaliar"
+        }, "M2", true, "data-stock-bar-class");
     }
 
     function renderSupplyBars() {
-        renderBars("stockSupplyBars", [
-            {key:"RISCO SEM COMPRA ABERTA",label:"Risco sem compra aberta"},
-            {key:"COMPRA AINDA INSUFICIENTE",label:"Compra ainda insuficiente"},
-            {key:"COMPRA EM ABERTO REDUZ RISCO",label:"Compra reduz o risco"},
-            {key:"COMPRA SEM DEMANDA 12M - AVALIAR",label:"Compra sem demanda 12M"},
-            {key:"COMPRA EM ABERTO",label:"Compra em aberto"}
-        ], "SINAL_ABASTECIMENTO", "count");
+        renderBars("stockSupplyBars", "SUPPLY", {
+            "RISCO SEM COMPRA ABERTA":"Risco sem compra aberta",
+            "COMPRA AINDA INSUFICIENTE":"Compra ainda insuficiente",
+            "COMPRA EM ABERTO REDUZ RISCO":"Compra reduz o risco",
+            "COMPRA SEM DEMANDA 12M - AVALIAR":"Compra sem demanda 12M",
+            "COMPRA EM ABERTO":"Compra em aberto",
+            "SEM COMPRA ABERTA":"Sem compra aberta"
+        }, "M1", false, "data-stock-bar-supply");
     }
 
-    function capitalToReview(row) {
-        var cls = String(row.CLASSIFICACAO_ESTOQUE || "");
-        return cls === "SEM GIRO 12M" ||
-               cls === "EXCESSO PROVAVEL" ||
-               cls === "BAIXA RECORRENCIA - ESTOQUE ALTO";
-    }
-
-    function renderRanking(id, field) {
-        var sums = {};
-        allRows.forEach(function (row) {
-            if (!capitalToReview(row)) return;
-            var key = String(row[field] || "Sem classificação").trim() || "Sem classificação";
-            sums[key] = (sums[key] || 0) + n(row.VALOR_ESTOQUE_NOVO);
-        });
-        var arr = Object.keys(sums).map(function (key) {
-            return { key:key, value:sums[key] };
-        }).sort(function (a,b) { return b.value-a.value; }).slice(0,8);
+    function renderRanking(id, type) {
         var el = document.getElementById(id);
         if (!el) return;
-        if (!arr.length) {
+
+        var rows = metaList(type)
+            .map(function (row) {
+                return { key:String(row.CHAVE || ""), value:n(row.M2) };
+            })
+            .sort(function (a, b) { return b.value - a.value; });
+
+        if (!rows.length) {
             el.innerHTML = '<div class="stock-empty">Sem concentração relevante.</div>';
             return;
         }
-        var max = arr[0].value || 1;
-        el.innerHTML = arr.map(function (r, i) {
+
+        var max = rows[0].value || 1;
+        el.innerHTML = rows.map(function (r, i) {
             return '<div class="stock-rank-row">' +
-                '<span class="stock-rank-num">' + (i+1) + '</span>' +
+                '<span class="stock-rank-num">' + (i + 1) + '</span>' +
                 '<span class="stock-rank-main"><span class="stock-rank-name">' + escapeHtml(r.key) + '</span>' +
-                '<span class="stock-rank-track"><span style="width:' + Math.max(3,r.value/max*100) + '%"></span></span></span>' +
+                '<span class="stock-rank-track"><span style="width:' + Math.max(3, r.value / max * 100) + '%"></span></span></span>' +
                 '<strong>' + brl(r.value) + '</strong></div>';
         }).join("");
     }
@@ -498,53 +711,11 @@ ORDER BY
         return '<span class="stock-badge ' + cls + '">' + escapeHtml(v) + '</span>';
     }
 
-    function filters() {
-        return {
-            search:(document.getElementById("stockSearch") || {}).value || "",
-            cls:(document.getElementById("stockClassFilter") || {}).value || "",
-            supply:(document.getElementById("stockSupplyFilter") || {}).value || "",
-            brand:(document.getElementById("stockBrandFilter") || {}).value || "",
-            group:(document.getElementById("stockGroupFilter") || {}).value || ""
-        };
-    }
-
-    function applyFilters(reset) {
-        if (reset !== false) page = 1;
-        var f = filters();
-        var q = f.search.trim().toLowerCase();
-        filteredRows = allRows.filter(function (r) {
-            if (f.cls && String(r.CLASSIFICACAO_ESTOQUE || "") !== f.cls) return false;
-            if (f.supply && String(r.SINAL_ABASTECIMENTO || "") !== f.supply) return false;
-            if (f.brand && String(r.MARCA || "") !== f.brand) return false;
-            if (f.group && String(r.DESCRGRUPOPROD || "") !== f.group) return false;
-            if (q) {
-                var hay = (String(r.CODPROD || "") + " " + String(r.DESCRPROD || "")).toLowerCase();
-                if (hay.indexOf(q) === -1) return false;
-            }
-            return true;
-        });
-        filteredRows.sort(function (a,b) {
-            var da = n(a.DEMANDA_REFERENCIA) > 0;
-            var db = n(b.DEMANDA_REFERENCIA) > 0;
-            if (da !== db) return da ? -1 : 1;
-            if (da && n(a.COBERTURA_ATUAL_MESES) !== n(b.COBERTURA_ATUAL_MESES)) {
-                return n(a.COBERTURA_ATUAL_MESES) - n(b.COBERTURA_ATUAL_MESES);
-            }
-            return n(b.VALOR_ESTOQUE_NOVO) - n(a.VALOR_ESTOQUE_NOVO);
-        });
-        renderTable();
-    }
-
     function renderTable() {
         var tbody = document.getElementById("stockTableBody");
         if (!tbody) return;
-        var total = filteredRows.length;
-        var pages = Math.max(1, Math.ceil(total/pageSize));
-        if (page > pages) page = pages;
-        var start = (page-1)*pageSize;
-        var rows = filteredRows.slice(start,start+pageSize);
 
-        tbody.innerHTML = rows.length ? rows.map(function (r) {
+        tbody.innerHTML = allRows.length ? allRows.map(function (r) {
             var neg = n(r.SALDO_NEGATIVO_NOVO);
             return '<tr>' +
                 '<td><div class="stock-product"><strong>' + escapeHtml(String(r.CODPROD || "").padStart(6,"0")) + '</strong><span>' + escapeHtml(r.DESCRPROD || "") + '</span></div></td>' +
@@ -554,47 +725,85 @@ ORDER BY
                 '<td class="num">' + num(r.LIVRE_NOVO,2) + '</td>' +
                 '<td class="num">' + num(r.COMPRA_ABERTA,2) + '</td>' +
                 '<td class="num"><strong>' + num(r.DEMANDA_REFERENCIA,2) + '</strong></td>' +
-                '<td class="num">' + (n(r.DEMANDA_REFERENCIA)>0 ? num(r.COBERTURA_ATUAL_MESES,2) + ' m' : '—') + '</td>' +
-                '<td class="num">' + (n(r.DEMANDA_REFERENCIA)>0 ? num(r.COBERTURA_PROJETADA_MESES,2) + ' m' : '—') + '</td>' +
+                '<td class="num">' + (n(r.DEMANDA_REFERENCIA) > 0 ? num(r.COBERTURA_ATUAL_MESES,2) + ' m' : '—') + '</td>' +
+                '<td class="num">' + (n(r.DEMANDA_REFERENCIA) > 0 ? num(r.COBERTURA_PROJETADA_MESES,2) + ' m' : '—') + '</td>' +
                 '<td><div class="stock-recurrence"><strong>' + escapeHtml(r.PERFIL_RECORRENCIA || "—") + '</strong><span>' + intFmt(r.MESES_COM_DEMANDA_12M) + '/12 meses</span></div></td>' +
                 '<td>' + classBadge(r.CLASSIFICACAO_ESTOQUE) + '</td>' +
                 '<td>' + supplyBadge(r.SINAL_ABASTECIMENTO) + '</td>' +
                 '</tr>';
         }).join("") : '<tr><td colspan="12" class="stock-empty-cell">Nenhum produto encontrado.</td></tr>';
 
-        setText("stockTableSummary", intFmt(total) + " produtos após filtros");
-        setText("stockTableRange", total ? (intFmt(start+1) + "–" + intFmt(Math.min(start+pageSize,total)) + " de " + intFmt(total)) : "0 produtos");
+        var pages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+        var start = totalFiltered ? ((page - 1) * pageSize) + 1 : 0;
+        var end = totalFiltered ? Math.min(page * pageSize, totalFiltered) : 0;
+
+        setText("stockTableSummary", intFmt(totalFiltered) + " produtos após filtros");
+        setText("stockTableRange", totalFiltered ? (intFmt(start) + "–" + intFmt(end) + " de " + intFmt(totalFiltered)) : "0 produtos");
         setText("stockPageLabel", "Página " + page + " de " + pages);
+
         var prev = document.getElementById("stockPrevBtn");
         var next = document.getElementById("stockNextBtn");
         if (prev) prev.disabled = page <= 1;
         if (next) next.disabled = page >= pages;
     }
 
-    function clearFilters(render) {
+    async function loadTable(resetPage) {
+        if (resetPage !== false) page = 1;
+
+        setText("stockTableSummary", "Consultando produtos...");
+        var rows = await executeQueryPromise(sqlTablePage(), []);
+        allRows = Array.isArray(rows) ? rows : [];
+        totalFiltered = allRows.length ? n(allRows[0].TOTAL_REGISTROS) : 0;
+        renderTable();
+    }
+
+    function clearFilters(loadNow) {
         ["stockSearch","stockClassFilter","stockSupplyFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.value = "";
         });
-        if (render !== false) applyFilters(true);
+        if (loadNow !== false) loadTable(true).catch(handleTableError);
     }
 
     function setFilter(id, value) {
         clearFilters(false);
         var el = document.getElementById(id);
         if (el) el.value = value || "";
-        applyFilters(true);
+        loadTable(true).catch(handleTableError);
+
         var panel = document.getElementById("stockTablePanel");
         if (panel && panel.scrollIntoView) panel.scrollIntoView({behavior:"smooth",block:"start"});
     }
 
+    function handleTableError(e) {
+        console.error("[DM-DASHBOARD][Estoque][Tabela]", e);
+        setText("stockTableSummary", "Erro ao consultar produtos");
+        var tbody = document.getElementById("stockTableBody");
+        if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="stock-empty-cell">Não foi possível carregar a tabela. Consulte o console (F12).</td></tr>';
+    }
+
+    var searchTimer = null;
+
     function bindControls() {
-        ["stockSearch","stockClassFilter","stockSupplyFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
+        ["stockClassFilter","stockSupplyFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el || el.dataset.stockBound) return;
             el.dataset.stockBound = "1";
-            el.addEventListener(id === "stockSearch" ? "input" : "change", function () { applyFilters(true); });
+            el.addEventListener("change", function () {
+                loadTable(true).catch(handleTableError);
+            });
         });
+
+        var search = document.getElementById("stockSearch");
+        if (search && !search.dataset.stockBound) {
+            search.dataset.stockBound = "1";
+            search.addEventListener("input", function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function () {
+                    loadTable(true).catch(handleTableError);
+                }, 450);
+            });
+        }
 
         var clear = document.getElementById("stockClearFilters");
         if (clear && !clear.dataset.stockBound) {
@@ -611,21 +820,30 @@ ORDER BY
         var prev = document.getElementById("stockPrevBtn");
         if (prev && !prev.dataset.stockBound) {
             prev.dataset.stockBound = "1";
-            prev.addEventListener("click", function () { if (page > 1) { page--; renderTable(); } });
+            prev.addEventListener("click", function () {
+                if (page > 1) {
+                    page--;
+                    loadTable(false).catch(handleTableError);
+                }
+            });
         }
 
         var next = document.getElementById("stockNextBtn");
         if (next && !next.dataset.stockBound) {
             next.dataset.stockBound = "1";
             next.addEventListener("click", function () {
-                var pages = Math.max(1, Math.ceil(filteredRows.length/pageSize));
-                if (page < pages) { page++; renderTable(); }
+                var pages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+                if (page < pages) {
+                    page++;
+                    loadTable(false).catch(handleTableError);
+                }
             });
         }
 
         document.addEventListener("click", function (e) {
             var el = e.target.closest ? e.target.closest("[data-stock-quick],[data-stock-supply-quick],[data-stock-bar-class],[data-stock-bar-supply]") : null;
             if (!el) return;
+
             if (el.hasAttribute("data-stock-quick")) {
                 var cls = el.getAttribute("data-stock-quick");
                 if (cls === "ALL") clearFilters(true);
@@ -640,34 +858,46 @@ ORDER BY
         });
     }
 
-    function renderAll() {
+    function renderMeta() {
         renderKpis();
         renderCapitalBars();
         renderSupplyBars();
-        renderRanking("stockBrandRanking","MARCA");
-        renderRanking("stockGroupRanking","DESCRGRUPOPROD");
-        fillSelect("stockClassFilter","CLASSIFICACAO_ESTOQUE","Todas");
-        fillSelect("stockSupplyFilter","SINAL_ABASTECIMENTO","Todos");
-        fillSelect("stockBrandFilter","MARCA","Todas");
-        fillSelect("stockGroupFilter","DESCRGRUPOPROD","Todas");
-        applyFilters(false);
+        renderRanking("stockBrandRanking","BRAND");
+        renderRanking("stockGroupRanking","GROUP");
+        fillMetaSelect("stockClassFilter","CLASS","Todas");
+        fillMetaSelect("stockSupplyFilter","SUPPLY","Todos");
+        fillMetaSelect("stockBrandFilter","OPT_BRAND","Todas");
+        fillMetaSelect("stockGroupFilter","OPT_GROUP","Todas");
+
+        var s = meta("SUMMARY","TOTAL") || {};
+        setText("stockContext", "Base consolidada · " + intFmt(s.M1) + " SKUs · empresas 1, 2 e 3 · demanda móvel 90D / 12M");
     }
 
     async function load(force) {
         if (loading || (loadedOnce && !force)) return;
+
         loading = true;
         setText("stockUpdatedAt","Consultando Sankhya...");
+
         try {
-            var rows = await executeQueryPromise(sqlStockIntelligence(), []);
-            allRows = Array.isArray(rows) ? rows : [];
+            var result = await Promise.all([
+                executeQueryPromise(sqlDashboardMeta(), []),
+                executeQueryPromise(sqlTablePage(), [])
+            ]);
+
+            metaRows = Array.isArray(result[0]) ? result[0] : [];
+            allRows = Array.isArray(result[1]) ? result[1] : [];
+            totalFiltered = allRows.length ? n(allRows[0].TOTAL_REGISTROS) : 0;
+
+            renderMeta();
+            renderTable();
+
             loadedOnce = true;
-            renderAll();
             setText("stockUpdatedAt","Atualizado às " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
         } catch (e) {
             console.error("[DM-DASHBOARD][Estoque]", e);
             setText("stockUpdatedAt","Erro ao consultar o Sankhya");
-            var tbody = document.getElementById("stockTableBody");
-            if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="stock-empty-cell">Não foi possível carregar a inteligência de estoque. Consulte o console (F12).</td></tr>';
+            handleTableError(e);
         } finally {
             loading = false;
         }
