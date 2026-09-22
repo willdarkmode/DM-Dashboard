@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — Estoque & Compras V1
+ * DM Dashboard — Estoque & Compras V1 · UX V2.26.0
  * Fonte: Sankhya executeQuery()
  */
 (function () {
@@ -12,6 +12,8 @@
     var totalFiltered = 0;
     var page = 1;
     var pageSize = 25;
+    var sortKey = "COBERTURA_ATUAL_MESES";
+    var sortDir = "asc";
 
     function n(value) {
         if (typeof value === "number") return isFinite(value) ? value : 0;
@@ -520,17 +522,31 @@ GROUP BY TRIM(DESCRGRUPOPROD)`;
         var endRow = page * pageSize;
         var whereSql = where.length ? " AND " + where.join(" AND ") : "";
 
+        var sortable = {
+            DESCRPROD: "D.DESCRPROD",
+            MARCA: "NVL(D.MARCA,'')",
+            ESTOQUE_NOVO_FISICO: "D.ESTOQUE_NOVO_FISICO",
+            RESERVADO_NOVO: "D.RESERVADO_NOVO",
+            LIVRE_NOVO: "D.LIVRE_NOVO",
+            COMPRA_ABERTA: "D.COMPRA_ABERTA",
+            DEMANDA_REFERENCIA: "D.DEMANDA_REFERENCIA",
+            COBERTURA_ATUAL_MESES: "D.COBERTURA_ATUAL_MESES",
+            COBERTURA_PROJETADA_MESES: "D.COBERTURA_PROJETADA_MESES",
+            MESES_COM_DEMANDA_12M: "D.MESES_COM_DEMANDA_12M",
+            CLASSIFICACAO_ESTOQUE: "D.CLASSIFICACAO_ESTOQUE",
+            SINAL_ABASTECIMENTO: "D.SINAL_ABASTECIMENTO"
+        };
+        var orderExpr = sortable[sortKey] || "D.COBERTURA_ATUAL_MESES";
+        var orderDir = sortDir === "desc" ? "DESC" : "ASC";
+        var nulls = (sortKey === "COBERTURA_ATUAL_MESES" || sortKey === "COBERTURA_PROJETADA_MESES") ? " NULLS LAST" : "";
+
         return base + `,
 PAGED AS (
     SELECT
         D.*,
         COUNT(*) OVER() AS TOTAL_REGISTROS,
         ROW_NUMBER() OVER (
-            ORDER BY
-                CASE WHEN D.DEMANDA_REFERENCIA > 0 THEN 0 ELSE 1 END,
-                CASE WHEN D.DEMANDA_REFERENCIA > 0 THEN D.COBERTURA_ATUAL_MESES END,
-                D.VALOR_ESTOQUE_NOVO DESC,
-                D.CODPROD
+            ORDER BY ` + orderExpr + ` ` + orderDir + nulls + `, D.CODPROD ASC
         ) AS RN
     FROM DATASET D
     WHERE 1 = 1` + whereSql + `
@@ -640,28 +656,79 @@ ORDER BY RN`;
     }
 
     function renderCapitalBars() {
-        renderBars("stockCapitalBars", "CLASS", {
+        var el = document.getElementById("stockCapitalBars");
+        if (!el) return;
+
+        var order = [
+            "SEM GIRO 12M",
+            "EXCESSO PROVAVEL",
+            "BAIXA RECORRENCIA - ESTOQUE ALTO",
+            "BAIXA RECORRENCIA - AVALIAR",
+            "SAUDAVEL",
+            "ATENCAO",
+            "RISCO DE RUPTURA",
+            "CRITICO - SEM ESTOQUE LIVRE"
+        ];
+        var labels = {
             "SEM GIRO 12M":"Sem giro 12M",
-            "BAIXA RECORRENCIA - AVALIAR":"Baixa recorrência · avaliar",
-            "BAIXA RECORRENCIA - ESTOQUE ALTO":"Baixa recorrência · estoque alto",
             "EXCESSO PROVAVEL":"Excesso provável",
+            "BAIXA RECORRENCIA - ESTOQUE ALTO":"Baixa recorrência · estoque alto",
+            "BAIXA RECORRENCIA - AVALIAR":"Baixa recorrência · avaliar",
             "SAUDAVEL":"Saudável",
             "ATENCAO":"Atenção",
             "RISCO DE RUPTURA":"Risco de ruptura",
-            "CRITICO - SEM ESTOQUE LIVRE":"Crítico · sem estoque livre",
-            "AVALIAR":"Avaliar"
-        }, "M2", true, "data-stock-bar-class");
+            "CRITICO - SEM ESTOQUE LIVRE":"Crítico"
+        };
+        var className = {
+            "SEM GIRO 12M":"is-dark",
+            "EXCESSO PROVAVEL":"is-blue",
+            "BAIXA RECORRENCIA - ESTOQUE ALTO":"is-purple",
+            "BAIXA RECORRENCIA - AVALIAR":"is-violet",
+            "SAUDAVEL":"is-green",
+            "ATENCAO":"is-amber",
+            "RISCO DE RUPTURA":"is-red",
+            "CRITICO - SEM ESTOQUE LIVRE":"is-red"
+        };
+
+        var total = metaList("CLASS").reduce(function (acc, row) { return acc + n(row.M2); }, 0);
+        var rows = order.map(function (key) {
+            var row = meta("CLASS", key);
+            if (!row || n(row.M2) <= 0) return null;
+            return { key:key, label:labels[key], value:n(row.M2), count:n(row.M1), cls:className[key] || "" };
+        }).filter(Boolean);
+
+        el.innerHTML = rows.map(function (r) {
+            var pct = total > 0 ? (r.value / total) * 100 : 0;
+            return '<button class="stock-capital-card ' + r.cls + '" type="button" data-stock-bar-class="' + escapeHtml(r.key) + '">' +
+                '<span class="stock-capital-name">' + escapeHtml(r.label) + '</span>' +
+                '<strong>' + brl(r.value) + '</strong>' +
+                '<span class="stock-capital-meta"><b>' + num(pct,1) + '%</b> do estoque · ' + intFmt(r.count) + ' SKUs</span>' +
+                '</button>';
+        }).join("");
     }
 
     function renderSupplyBars() {
-        renderBars("stockSupplyBars", "SUPPLY", {
-            "RISCO SEM COMPRA ABERTA":"Risco sem compra aberta",
-            "COMPRA AINDA INSUFICIENTE":"Compra ainda insuficiente",
-            "COMPRA EM ABERTO REDUZ RISCO":"Compra reduz o risco",
-            "COMPRA SEM DEMANDA 12M - AVALIAR":"Compra sem demanda 12M",
-            "COMPRA EM ABERTO":"Compra em aberto",
-            "SEM COMPRA ABERTA":"Sem compra aberta"
-        }, "M1", false, "data-stock-bar-supply");
+        var el = document.getElementById("stockSupplyBars");
+        if (!el) return;
+
+        var defs = [
+            {key:"RISCO SEM COMPRA ABERTA",label:"Risco sem compra",tone:"danger",hint:"Cobertura < 1 mês e nenhuma compra"},
+            {key:"COMPRA AINDA INSUFICIENTE",label:"Compra insuficiente",tone:"warning",hint:"Compra aberta, mas cobertura futura < 1 mês"},
+            {key:"COMPRA EM ABERTO REDUZ RISCO",label:"Compra reduz o risco",tone:"success",hint:"Pedido em aberto leva cobertura para ≥ 1 mês"},
+            {key:"COMPRA SEM DEMANDA 12M - AVALIAR",label:"Compra sem demanda",tone:"purple",hint:"Compra aberta sem saída bruta em 12 meses"},
+            {key:"COMPRA EM ABERTO",label:"Compra em aberto",tone:"info",hint:"Pedido aberto sem sinal crítico"}
+        ];
+
+        el.innerHTML = defs.map(function (d) {
+            var row = meta("SUPPLY", d.key);
+            var value = row ? n(row.M1) : 0;
+            if (value <= 0) return "";
+            return '<button class="stock-supply-card ' + d.tone + '" type="button" data-stock-bar-supply="' + escapeHtml(d.key) + '">' +
+                '<span class="stock-supply-icon" aria-hidden="true"></span>' +
+                '<span class="stock-supply-copy"><strong>' + escapeHtml(d.label) + '</strong><small>' + escapeHtml(d.hint) + '</small></span>' +
+                '<b class="stock-supply-value">' + intFmt(value) + '</b>' +
+                '</button>';
+        }).join("");
     }
 
     function renderRanking(id, type) {
@@ -670,7 +737,7 @@ ORDER BY RN`;
 
         var rows = metaList(type)
             .map(function (row) {
-                return { key:String(row.CHAVE || ""), value:n(row.M2) };
+                return { key:String(row.CHAVE || ""), value:n(row.M2), count:n(row.M1) };
             })
             .sort(function (a, b) { return b.value - a.value; });
 
@@ -679,12 +746,25 @@ ORDER BY RN`;
             return;
         }
 
+        if (type === "GROUP") {
+            el.innerHTML = rows.map(function (r, i) {
+                return '<article class="stock-family-card">' +
+                    '<span class="stock-family-rank">#' + (i + 1) + '</span>' +
+                    '<strong>' + escapeHtml(r.key) + '</strong>' +
+                    '<b>' + brl(r.value) + '</b>' +
+                    '<small>' + intFmt(r.count) + ' SKUs para revisar</small>' +
+                    '</article>';
+            }).join("");
+            return;
+        }
+
         var max = rows[0].value || 1;
         el.innerHTML = rows.map(function (r, i) {
             return '<div class="stock-rank-row">' +
                 '<span class="stock-rank-num">' + (i + 1) + '</span>' +
                 '<span class="stock-rank-main"><span class="stock-rank-name">' + escapeHtml(r.key) + '</span>' +
-                '<span class="stock-rank-track"><span style="width:' + Math.max(3, r.value / max * 100) + '%"></span></span></span>' +
+                '<span class="stock-rank-track"><span style="width:' + Math.max(3, r.value / max * 100) + '%"></span></span>' +
+                '<small>' + intFmt(r.count) + ' SKUs</small></span>' +
                 '<strong>' + brl(r.value) + '</strong></div>';
         }).join("");
     }
@@ -711,7 +791,19 @@ ORDER BY RN`;
         return '<span class="stock-badge ' + cls + '">' + escapeHtml(v) + '</span>';
     }
 
+    function syncSortHeaders() {
+        var buttons = document.querySelectorAll("[data-stock-sort]");
+        for (var i = 0; i < buttons.length; i++) {
+            var btn = buttons[i];
+            var active = btn.getAttribute("data-stock-sort") === sortKey;
+            btn.classList.toggle("is-active", active);
+            btn.setAttribute("data-sort-dir", active ? sortDir : "");
+            btn.setAttribute("aria-sort", active ? (sortDir === "asc" ? "ascending" : "descending") : "none");
+        }
+    }
+
     function renderTable() {
+        syncSortHeaders();
         var tbody = document.getElementById("stockTableBody");
         if (!tbody) return;
 
@@ -837,6 +929,33 @@ ORDER BY RN`;
                     page++;
                     loadTable(false).catch(handleTableError);
                 }
+            });
+        }
+
+        var pageSizeSelect = document.getElementById("stockPageSize");
+        if (pageSizeSelect && !pageSizeSelect.dataset.stockBound) {
+            pageSizeSelect.dataset.stockBound = "1";
+            pageSizeSelect.addEventListener("change", function () {
+                var size = Number(this.value);
+                pageSize = [25,50,100].indexOf(size) >= 0 ? size : 25;
+                loadTable(true).catch(handleTableError);
+            });
+        }
+
+        var sortButtons = document.querySelectorAll("[data-stock-sort]");
+        for (var i = 0; i < sortButtons.length; i++) {
+            var sortBtn = sortButtons[i];
+            if (sortBtn.dataset.stockBound) continue;
+            sortBtn.dataset.stockBound = "1";
+            sortBtn.addEventListener("click", function () {
+                var key = this.getAttribute("data-stock-sort");
+                if (sortKey === key) {
+                    sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                    sortKey = key;
+                    sortDir = (key === "DESCRPROD" || key === "MARCA" || key === "CLASSIFICACAO_ESTOQUE" || key === "SINAL_ABASTECIMENTO") ? "asc" : "desc";
+                }
+                loadTable(true).catch(handleTableError);
             });
         }
 

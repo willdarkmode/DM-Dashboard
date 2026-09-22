@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.25.1"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.26.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.25.1: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.26.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -978,7 +978,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.25.1 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.26.0 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1034,50 +1034,50 @@
                 </div>
 
                 <div class="stock-grid stock-grid-main">
-                    <article class="stock-panel">
+                    <article class="stock-panel stock-capital-panel">
                         <div class="stock-panel-head">
                             <div>
                                 <div class="stock-panel-title">Onde está o capital</div>
                                 <div class="stock-panel-sub">Valor do estoque novo por situação. Clique em uma faixa para filtrar a tabela.</div>
                             </div>
                         </div>
-                        <div class="stock-bars" id="stockCapitalBars">
+                        <div class="stock-capital-view" id="stockCapitalBars">
                             <div class="stock-empty">Carregando distribuição...</div>
                         </div>
                     </article>
 
-                    <article class="stock-panel">
+                    <article class="stock-panel stock-supply-panel">
                         <div class="stock-panel-head">
                             <div>
                                 <div class="stock-panel-title">Situação do abastecimento</div>
                                 <div class="stock-panel-sub">Quantidade de SKUs conforme estoque livre, compras em aberto e cobertura projetada.</div>
                             </div>
                         </div>
-                        <div class="stock-bars stock-bars-supply" id="stockSupplyBars">
+                        <div class="stock-supply-view" id="stockSupplyBars">
                             <div class="stock-empty">Carregando sinais...</div>
                         </div>
                     </article>
                 </div>
 
                 <div class="stock-grid stock-grid-rank">
-                    <article class="stock-panel">
+                    <article class="stock-panel stock-brand-panel">
                         <div class="stock-panel-head">
                             <div>
                                 <div class="stock-panel-title">Capital a revisar por marca</div>
                                 <div class="stock-panel-sub">Sem giro + excesso provável + baixa recorrência com estoque alto.</div>
                             </div>
                         </div>
-                        <div class="stock-ranking" id="stockBrandRanking"></div>
+                        <div class="stock-ranking stock-brand-ranking" id="stockBrandRanking"></div>
                     </article>
 
-                    <article class="stock-panel">
+                    <article class="stock-panel stock-family-panel">
                         <div class="stock-panel-head">
                             <div>
                                 <div class="stock-panel-title">Capital a revisar por família</div>
                                 <div class="stock-panel-sub">Grupos de produto que mais concentram estoque para análise.</div>
                             </div>
                         </div>
-                        <div class="stock-ranking" id="stockGroupRanking"></div>
+                        <div class="stock-family-grid" id="stockGroupRanking"></div>
                     </article>
                 </div>
 
@@ -1117,18 +1117,18 @@
                         <table class="stock-table">
                             <thead>
                                 <tr>
-                                    <th>Produto</th>
-                                    <th>Marca / família</th>
-                                    <th class="num">Físico</th>
-                                    <th class="num">Reservado</th>
-                                    <th class="num">Livre</th>
-                                    <th class="num">Compra</th>
-                                    <th class="num">Demanda/mês</th>
-                                    <th class="num">Cob. atual</th>
-                                    <th class="num">Cob. futura</th>
-                                    <th>Recorrência</th>
-                                    <th>Situação</th>
-                                    <th>Abastecimento</th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="DESCRPROD">Produto</button></th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="MARCA">Marca / família</button></th>
+                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="ESTOQUE_NOVO_FISICO">Físico</button></th>
+                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="RESERVADO_NOVO">Reservado</button></th>
+                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="LIVRE_NOVO">Livre</button></th>
+                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="COMPRA_ABERTA">Compra</button></th>
+                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="DEMANDA_REFERENCIA">Demanda/mês</button></th>
+                                    <th class="num"><button class="stock-sort-btn is-active" type="button" data-stock-sort="COBERTURA_ATUAL_MESES">Cob. atual</button></th>
+                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="COBERTURA_PROJETADA_MESES">Cob. futura</button></th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="MESES_COM_DEMANDA_12M">Recorrência</button></th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="CLASSIFICACAO_ESTOQUE">Situação</button></th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="SINAL_ABASTECIMENTO">Abastecimento</button></th>
                                 </tr>
                             </thead>
                             <tbody id="stockTableBody">
@@ -1139,10 +1139,20 @@
 
                     <div class="stock-table-footer">
                         <span id="stockTableRange">—</span>
-                        <div class="stock-pagination">
-                            <button id="stockPrevBtn" type="button">Anterior</button>
-                            <span id="stockPageLabel">Página —</span>
-                            <button id="stockNextBtn" type="button">Próxima</button>
+                        <div class="stock-table-footer-actions">
+                            <label class="stock-page-size-label">
+                                <span>Linhas</span>
+                                <select id="stockPageSize" aria-label="Linhas por página">
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </label>
+                            <div class="stock-pagination">
+                                <button id="stockPrevBtn" type="button">Anterior</button>
+                                <span id="stockPageLabel">Página —</span>
+                                <button id="stockNextBtn" type="button">Próxima</button>
+                            </div>
                         </div>
                     </div>
                 </article>
@@ -1176,11 +1186,11 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.25.1: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.25.1"
+<!-- V2.26.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.26.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.25.1"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.26.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
