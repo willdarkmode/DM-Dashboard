@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.24.0"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.24.1"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.24.0: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.24.1: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -993,8 +993,8 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.24.0: JavaScript único (regras + módulos + navegação + Visão Geral) -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.24.0"
+<!-- V2.24.1: JavaScript único (regras + módulos + navegação + Visão Geral) -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.24.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
