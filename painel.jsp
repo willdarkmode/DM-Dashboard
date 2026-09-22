@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.26.0"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.26.1"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.26.0: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.26.1: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -978,7 +978,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.26.0 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.26.1 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1037,8 +1037,8 @@
                     <article class="stock-panel stock-capital-panel">
                         <div class="stock-panel-head">
                             <div>
-                                <div class="stock-panel-title">Onde está o capital</div>
-                                <div class="stock-panel-sub">Valor do estoque novo por situação. Clique em uma faixa para filtrar a tabela.</div>
+                                <div class="stock-panel-title">Leitura executiva do capital</div>
+                                <div class="stock-panel-sub">Resumo do estoque por decisão: revisar, saudável, baixa recorrência e curto/risco.</div>
                             </div>
                         </div>
                         <div class="stock-capital-view" id="stockCapitalBars">
@@ -1073,11 +1073,11 @@
                     <article class="stock-panel stock-family-panel">
                         <div class="stock-panel-head">
                             <div>
-                                <div class="stock-panel-title">Capital a revisar por família</div>
-                                <div class="stock-panel-sub">Grupos de produto que mais concentram estoque para análise.</div>
+                                <div class="stock-panel-title">Produtos de maior valor para revisar</div>
+                                <div class="stock-panel-sub">SKUs com maior capital entre sem giro, excesso provável e baixa recorrência com estoque alto.</div>
                             </div>
                         </div>
-                        <div class="stock-family-grid" id="stockGroupRanking"></div>
+                        <div class="stock-review-products" id="stockGroupRanking"></div>
                     </article>
                 </div>
 
@@ -1186,11 +1186,11 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.26.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.26.0"
+<!-- V2.26.1: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.26.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.26.0"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.26.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
