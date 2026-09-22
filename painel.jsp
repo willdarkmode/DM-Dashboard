@@ -10,6 +10,18 @@
     <title>Painel Comercial — Sankhya</title>
     <snk:load/>
 
+    <!-- Aplica o tema salvo antes do CSS para evitar troca visual durante a carga. -->
+    <script>
+        (function () {
+            var theme = "dark";
+            try {
+                var savedTheme = localStorage.getItem("_dm_dashboard_theme");
+                if (savedTheme === "light" || savedTheme === "dark") theme = savedTheme;
+            } catch (e) {}
+            document.documentElement.setAttribute("data-dm-theme", theme);
+        })();
+    </script>
+
     <!--
         V2.18 — baseline externa
         JSP: estrutura HTML + <snk:load/>
@@ -20,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.23.1"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.24.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.23.1: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.24.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -67,6 +79,14 @@
         </nav>
 
         <div class="dm-nav-footer">
+            <button class="dm-nav-item dm-theme-toggle" id="dmThemeBtn" type="button" title="Ativar tema claro" aria-label="Ativar tema claro">
+                <span class="dm-nav-icon" aria-hidden="true">
+                    <svg class="dm-theme-icon dm-theme-icon-light" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    <svg class="dm-theme-icon dm-theme-icon-dark" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </span>
+                <span class="dm-nav-label" id="dmThemeLabel">Tema claro</span>
+            </button>
+
             <button class="dm-nav-item" id="dmTvModeBtn" type="button" title="Modo TV" aria-label="Ativar Modo TV">
                 <span class="dm-nav-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 22h8"/><path d="M12 18v4"/></svg>
@@ -973,8 +993,8 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.23.1: JavaScript único (regras + módulos + navegação + Visão Geral) -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.23.1"
+<!-- V2.24.0: JavaScript único (regras + módulos + navegação + Visão Geral) -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.24.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
