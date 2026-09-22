@@ -16,13 +16,14 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.24.2
+## Arquitetura V2.25.0
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
 - `painel.jsp`: estrutura HTML do componente Sankhya;
 - `css/dashboard.css`: estilos consolidados;
-- `js/dashboard.js`: regras globais, consultas e módulos da aplicação.
+- `js/dashboard.js`: regras globais, consultas e módulos da aplicação;
+- `js/stock.js`: módulo de Inteligência de Estoque & Compras.
 
 A V2.24.0 adiciona alternância entre tema escuro e claro pelo menu lateral. O escuro continua sendo o padrão e a escolha do usuário é persistida no `localStorage` (`_dm_dashboard_theme`). O tema escolhido também é mantido no Modo TV.\n\nA V2.24.1 refina o contraste do tema claro em textos auxiliares, estados de filtro e tooltip do gráfico, sem alterar SQLs ou regras de negócio.\n\nA V2.24.2 corrige os últimos pontos de contraste identificados na validação visual: selo de status, cards da Curva ABC de clientes e números internos do Desempenho por frente comercial.
 
@@ -45,3 +46,12 @@ Validada no DBExplorer em 15/09/2026 e aplicada de forma compartilhada em Visão
 O Previsto Total representa a previsão global da empresa. O Previsto do Ranking segue o universo comercial elegível dos vendedores; por isso os dois valores podem apresentar pequenas diferenças intencionais. A TOP 2098 (Pedido ML Full) permanece fora do ranking comercial.
 
 Regras de funil, Assistência Técnica, classificação por frente, grupos de produtos, estoque e metas são operacionais e permanecem separadas da regra financeira compartilhada.
+
+
+## Inteligência de Estoque & Compras — V2.25.0
+
+A nova aba consolida estoque físico, reservado, livre, compras firmes em aberto (TOP 2000), demanda comercial, consumo de produção e recorrência. A leitura separa saldos negativos do estoque físico positivo, mantém usados e Delta Fábrica fora do estoque novo disponível e utiliza demanda de referência pelo maior ritmo entre 90 dias e 12 meses.
+
+Classificações principais: Sem Giro 12M, Baixa Recorrência, Excesso Provável, Saudável, Atenção, Risco de Ruptura e Crítico. O abastecimento é analisado separadamente: Risco sem Compra Aberta, Compra Ainda Insuficiente, Compra em Aberto Reduz Risco, Compra sem Demanda 12M e Compra em Aberto.
+
+A aba oferece KPIs clicáveis, distribuição do capital, sinais de abastecimento, rankings por marca/família e tabela por SKU com filtros.
