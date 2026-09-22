@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.26.1"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.27.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.26.1: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.27.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -978,7 +978,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.26.1 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.27.0 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1090,6 +1090,22 @@
                         <button class="stock-clear-filters" id="stockClearFilters" type="button">Limpar filtros</button>
                     </div>
 
+                    <div class="stock-origin-section">
+                        <div class="stock-origin-head">
+                            <div>
+                                <div class="stock-origin-title">Como estes produtos são consumidos?</div>
+                                <div class="stock-origin-sub">A demanda combina venda de componentes e consumo interno na montagem de painéis elétricos.</div>
+                            </div>
+                            <div class="stock-origin-legend">
+                                <span class="sales">Vendas</span>
+                                <span class="panels">Painéis</span>
+                            </div>
+                        </div>
+                        <div class="stock-origin-cards" id="stockOriginCards">
+                            <div class="stock-empty">Carregando origem da demanda...</div>
+                        </div>
+                    </div>
+
                     <div class="stock-filters">
                         <label class="stock-filter stock-filter-search">
                             <span>Buscar produto</span>
@@ -1102,6 +1118,10 @@
                         <label class="stock-filter">
                             <span>Abastecimento</span>
                             <select class="perf-control" id="stockSupplyFilter"><option value="">Todos</option></select>
+                        </label>
+                        <label class="stock-filter">
+                            <span>Origem da demanda</span>
+                            <select class="perf-control" id="stockOriginFilter"><option value="">Todas</option></select>
                         </label>
                         <label class="stock-filter">
                             <span>Marca</span>
@@ -1119,20 +1139,17 @@
                                 <tr>
                                     <th><button class="stock-sort-btn" type="button" data-stock-sort="DESCRPROD">Produto</button></th>
                                     <th><button class="stock-sort-btn" type="button" data-stock-sort="MARCA">Marca / família</button></th>
-                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="ESTOQUE_NOVO_FISICO">Físico</button></th>
-                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="RESERVADO_NOVO">Reservado</button></th>
-                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="LIVRE_NOVO">Livre</button></th>
-                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="COMPRA_ABERTA">Compra</button></th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="LIVRE_NOVO">Posição de estoque</button></th>
+                                    <th><button class="stock-sort-btn" type="button" data-stock-sort="PCT_PAINEIS_12M">Quem consome?</button></th>
                                     <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="DEMANDA_REFERENCIA">Demanda/mês</button></th>
-                                    <th class="num"><button class="stock-sort-btn is-active" type="button" data-stock-sort="COBERTURA_ATUAL_MESES">Cob. atual</button></th>
-                                    <th class="num"><button class="stock-sort-btn" type="button" data-stock-sort="COBERTURA_PROJETADA_MESES">Cob. futura</button></th>
+                                    <th><button class="stock-sort-btn is-active" type="button" data-stock-sort="COBERTURA_ATUAL_MESES">Cobertura</button></th>
                                     <th><button class="stock-sort-btn" type="button" data-stock-sort="MESES_COM_DEMANDA_12M">Recorrência</button></th>
                                     <th><button class="stock-sort-btn" type="button" data-stock-sort="CLASSIFICACAO_ESTOQUE">Situação</button></th>
                                     <th><button class="stock-sort-btn" type="button" data-stock-sort="SINAL_ABASTECIMENTO">Abastecimento</button></th>
                                 </tr>
                             </thead>
                             <tbody id="stockTableBody">
-                                <tr><td colspan="12" class="stock-empty-cell">Carregando inteligência de estoque...</td></tr>
+                                <tr><td colspan="9" class="stock-empty-cell">Carregando inteligência de estoque...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1156,6 +1173,8 @@
                         </div>
                     </div>
                 </article>
+
+                <div class="stock-product-tooltip" id="stockProductTooltip" role="tooltip" hidden></div>
 
                 <div class="stock-method-note">
                     <strong>Leitura da V1:</strong> estoque físico positivo é separado de saldos negativos; itens usados e Delta Fábrica ficam fora do estoque novo disponível; demanda combina vendas válidas e material entregue à produção; compra firme considera a TOP 2000. Produtos esporádicos não são classificados automaticamente como excesso.
@@ -1186,11 +1205,11 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.26.1: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.26.1"
+<!-- V2.27.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.27.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.26.1"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.27.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>

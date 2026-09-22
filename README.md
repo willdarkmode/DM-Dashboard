@@ -64,3 +64,6 @@ A V2.26.0 melhora a experiência da aba Estoque & Compras: tipografia e espaçam
 
 
 A V2.26.1 reduz redundâncias da aba Estoque & Compras: o bloco de capital vira uma leitura executiva por decisão e o antigo ranking por família é substituído por produtos de maior valor para revisão, com atalho direto para a tabela.
+
+
+A V2.27.0 transforma "Produtos para investigação" em uma mesa de decisão: posição de estoque consolidada, origem visual da demanda (Vendas x Painéis), cobertura atual/projetada, filtro rápido por origem e tooltip detalhado por SKU. A tela passa a evidenciar consumo interno de componentes na montagem de painéis, além da venda comercial, e reforça o contraste do tema claro.

@@ -136,6 +136,26 @@ ESTOQUE AS (
     FROM ESTOQUE_BASE
     GROUP BY CODPROD
 ),
+RESERVAS AS (
+    SELECT
+        ITE.CODPROD,
+        SUM(CASE WHEN CAB.CODTIPOPER IN (14,17)
+            THEN GREATEST(NVL(ITE.QTDNEG,0)-NVL(ITE.QTDENTREGUE,0),0) ELSE 0 END) AS RESERVA_PAINEIS,
+        SUM(CASE WHEN CAB.CODTIPOPER = 2017
+            THEN GREATEST(NVL(ITE.QTDNEG,0)-NVL(ITE.QTDENTREGUE,0),0) ELSE 0 END) AS RESERVA_SERVICOS,
+        SUM(CASE WHEN CAB.CODTIPOPER IN (3107,5002)
+            THEN GREATEST(NVL(ITE.QTDNEG,0)-NVL(ITE.QTDENTREGUE,0),0) ELSE 0 END) AS RESERVA_COMERCIAL,
+        SUM(CASE WHEN CAB.CODTIPOPER NOT IN (14,17,2017,3107,5002)
+            THEN GREATEST(NVL(ITE.QTDNEG,0)-NVL(ITE.QTDENTREGUE,0),0) ELSE 0 END) AS RESERVA_OUTROS
+    FROM TGFCAB CAB
+    JOIN TGFITE ITE ON ITE.NUNOTA = CAB.NUNOTA
+    WHERE CAB.CODEMP IN (${companies})
+      AND CAB.PENDENTE = 'S'
+      AND ITE.PENDENTE = 'S'
+      AND ITE.RESERVA = 'S'
+      AND ITE.CODLOCALORIG IN (10100,20100,40000)
+    GROUP BY ITE.CODPROD
+),
 COMPRAS AS (
     SELECT
         ITE.CODPROD,
@@ -249,6 +269,10 @@ BASE AS (
         NVL(E.VALOR_ESTOQUE_USADO,0) AS VALOR_ESTOQUE_USADO,
         NVL(E.VALOR_DELTA_FABRICA,0) AS VALOR_DELTA_FABRICA,
         NVL(E.VALOR_ESTOQUE_REGRA_ATUAL,0) AS VALOR_ESTOQUE_REGRA_ATUAL,
+        NVL(RS.RESERVA_PAINEIS,0) AS RESERVA_PAINEIS,
+        NVL(RS.RESERVA_SERVICOS,0) AS RESERVA_SERVICOS,
+        NVL(RS.RESERVA_COMERCIAL,0) AS RESERVA_COMERCIAL,
+        NVL(RS.RESERVA_OUTROS,0) AS RESERVA_OUTROS,
         NVL(CP.COMPRA_ABERTA,0) AS COMPRA_ABERTA,
         NVL(CP.QTD_PEDIDOS_COMPRA_ABERTOS,0) AS QTD_PEDIDOS_COMPRA_ABERTOS,
         NVL(C.VENDA_BRUTA_90D,0) AS VENDA_BRUTA_90D,
@@ -269,6 +293,7 @@ BASE AS (
     FROM TGFPRO PRO
     LEFT JOIN TGFGRU GRU ON GRU.CODGRUPOPROD = PRO.CODGRUPOPROD
     LEFT JOIN ESTOQUE E ON E.CODPROD = PRO.CODPROD
+    LEFT JOIN RESERVAS RS ON RS.CODPROD = PRO.CODPROD
     LEFT JOIN COMPRAS CP ON CP.CODPROD = PRO.CODPROD
     LEFT JOIN COMERCIAL C ON C.CODPROD = PRO.CODPROD
     LEFT JOIN PRODUCAO P ON P.CODPROD = PRO.CODPROD
@@ -299,6 +324,18 @@ FINAL AS (
             WHEN C.MESES_COM_DEMANDA_12M <= 9 THEN 'RECORRENTE'
             ELSE 'ALTA RECORRENCIA'
         END AS PERFIL_RECORRENCIA,
+        CASE
+            WHEN C.DEMANDA_COMERCIAL_12M > 0 AND C.DEMANDA_PRODUCAO_12M > 0 THEN 'MISTA'
+            WHEN C.DEMANDA_PRODUCAO_12M > 0 THEN 'PAINEIS'
+            WHEN C.DEMANDA_COMERCIAL_12M > 0 THEN 'VENDAS'
+            ELSE 'SEM DEMANDA'
+        END AS ORIGEM_DEMANDA,
+        CASE
+            WHEN C.DEMANDA_COMERCIAL_12M + C.DEMANDA_PRODUCAO_12M > 0
+            THEN (C.DEMANDA_PRODUCAO_12M /
+                 (C.DEMANDA_COMERCIAL_12M + C.DEMANDA_PRODUCAO_12M)) * 100
+            ELSE 0
+        END AS PCT_PAINEIS_12M,
         CASE WHEN C.DEMANDA_REFERENCIA > 0 THEN C.LIVRE_NOVO / C.DEMANDA_REFERENCIA ELSE NULL END AS COBERTURA_ATUAL,
         CASE WHEN C.DEMANDA_REFERENCIA > 0 THEN C.POSICAO_PROJETADA / C.DEMANDA_REFERENCIA ELSE NULL END AS COBERTURA_PROJETADA
     FROM CALCULO C
@@ -313,12 +350,25 @@ SELECT
     F.SALDO_NEGATIVO_NOVO,
     F.RESERVADO_NOVO,
     F.LIVRE_NOVO,
+    F.RESERVA_PAINEIS,
+    F.RESERVA_SERVICOS,
+    F.RESERVA_COMERCIAL,
+    F.RESERVA_OUTROS,
     ROUND(F.VALOR_ESTOQUE_NOVO,2) AS VALOR_ESTOQUE_NOVO,
+    ROUND(F.VALOR_ESTOQUE_LIVRE,2) AS VALOR_ESTOQUE_LIVRE,
     F.COMPRA_ABERTA,
     F.QTD_PEDIDOS_COMPRA_ABERTOS,
     F.POSICAO_PROJETADA,
     F.SAIDA_BRUTA_12M,
+    F.DEMANDA_COMERCIAL_90D,
+    F.DEMANDA_PRODUCAO_90D,
+    F.DEMANDA_COMERCIAL_12M,
+    F.DEMANDA_PRODUCAO_12M,
+    ROUND(F.MEDIA_90D,2) AS MEDIA_90D,
+    ROUND(F.MEDIA_12M,2) AS MEDIA_12M,
     ROUND(F.DEMANDA_REFERENCIA,2) AS DEMANDA_REFERENCIA,
+    F.ORIGEM_DEMANDA,
+    ROUND(F.PCT_PAINEIS_12M,1) AS PCT_PAINEIS_12M,
     F.MESES_COM_DEMANDA_12M,
     F.PERFIL_RECORRENCIA,
     ROUND(F.COBERTURA_ATUAL,2) AS COBERTURA_ATUAL_MESES,
@@ -421,6 +471,17 @@ GROUP BY SINAL_ABASTECIMENTO
 UNION ALL
 
 SELECT
+    'ORIGIN' AS TIPO_REGISTRO,
+    ORIGEM_DEMANDA AS CHAVE,
+    COUNT(*) AS M1,
+    NVL(SUM(VALOR_ESTOQUE_NOVO),0) AS M2,
+    0 AS M3, 0 AS M4, 0 AS M5, 0 AS M6, 0 AS M7, 0 AS M8, 0 AS M9
+FROM DATASET
+GROUP BY ORIGEM_DEMANDA
+
+UNION ALL
+
+SELECT
     'BRAND' AS TIPO_REGISTRO,
     X.CHAVE,
     X.QTD AS M1,
@@ -507,6 +568,7 @@ GROUP BY TRIM(DESCRGRUPOPROD)`;
             search: (document.getElementById("stockSearch") || {}).value || "",
             cls: (document.getElementById("stockClassFilter") || {}).value || "",
             supply: (document.getElementById("stockSupplyFilter") || {}).value || "",
+            origin: (document.getElementById("stockOriginFilter") || {}).value || "",
             brand: (document.getElementById("stockBrandFilter") || {}).value || "",
             group: (document.getElementById("stockGroupFilter") || {}).value || ""
         };
@@ -519,6 +581,7 @@ GROUP BY TRIM(DESCRGRUPOPROD)`;
 
         if (f.cls) where.push("D.CLASSIFICACAO_ESTOQUE = " + sqlLiteral(f.cls));
         if (f.supply) where.push("D.SINAL_ABASTECIMENTO = " + sqlLiteral(f.supply));
+        if (f.origin) where.push("D.ORIGEM_DEMANDA = " + sqlLiteral(f.origin));
         if (f.brand) where.push("NVL(TRIM(D.MARCA),'') = " + sqlLiteral(f.brand));
         if (f.group) where.push("NVL(TRIM(D.DESCRGRUPOPROD),'') = " + sqlLiteral(f.group));
 
@@ -541,6 +604,7 @@ GROUP BY TRIM(DESCRGRUPOPROD)`;
             LIVRE_NOVO: "D.LIVRE_NOVO",
             COMPRA_ABERTA: "D.COMPRA_ABERTA",
             DEMANDA_REFERENCIA: "D.DEMANDA_REFERENCIA",
+            PCT_PAINEIS_12M: "D.PCT_PAINEIS_12M",
             COBERTURA_ATUAL_MESES: "D.COBERTURA_ATUAL_MESES",
             COBERTURA_PROJETADA_MESES: "D.COBERTURA_PROJETADA_MESES",
             MESES_COM_DEMANDA_12M: "D.MESES_COM_DEMANDA_12M",
@@ -572,12 +636,25 @@ SELECT
     SALDO_NEGATIVO_NOVO,
     RESERVADO_NOVO,
     LIVRE_NOVO,
+    RESERVA_PAINEIS,
+    RESERVA_SERVICOS,
+    RESERVA_COMERCIAL,
+    RESERVA_OUTROS,
     VALOR_ESTOQUE_NOVO,
+    VALOR_ESTOQUE_LIVRE,
     COMPRA_ABERTA,
     QTD_PEDIDOS_COMPRA_ABERTOS,
     POSICAO_PROJETADA,
     SAIDA_BRUTA_12M,
+    DEMANDA_COMERCIAL_90D,
+    DEMANDA_PRODUCAO_90D,
+    DEMANDA_COMERCIAL_12M,
+    DEMANDA_PRODUCAO_12M,
+    MEDIA_90D,
+    MEDIA_12M,
     DEMANDA_REFERENCIA,
+    ORIGEM_DEMANDA,
+    PCT_PAINEIS_12M,
     MESES_COM_DEMANDA_12M,
     PERFIL_RECORRENCIA,
     COBERTURA_ATUAL_MESES,
@@ -752,6 +829,28 @@ ORDER BY RN`;
         }).join("");
     }
 
+    function renderOriginCards() {
+        var el = document.getElementById("stockOriginCards");
+        if (!el) return;
+
+        var defs = [
+            {key:"VENDAS",label:"Somente vendas",hint:"Demanda comercial, sem consumo de painéis",cls:"sales"},
+            {key:"MISTA",label:"Vendas + painéis",hint:"Consumido nos dois canais",cls:"mixed"},
+            {key:"PAINEIS",label:"Somente painéis",hint:"Sem venda comercial, mas consumido internamente",cls:"panels"},
+            {key:"SEM DEMANDA",label:"Sem demanda 12M",hint:"Nenhuma saída mapeada nos últimos 12 meses",cls:"none"}
+        ];
+
+        el.innerHTML = defs.map(function (d) {
+            var row = meta("ORIGIN", d.key);
+            var count = row ? n(row.M1) : 0;
+            if (count <= 0) return "";
+            return '<button class="stock-origin-card ' + d.cls + '" type="button" data-stock-origin-quick="' + escapeHtml(d.key) + '">' +
+                '<span class="stock-origin-card-top"><strong>' + escapeHtml(d.label) + '</strong><b>' + intFmt(count) + '</b></span>' +
+                '<span>' + escapeHtml(d.hint) + '</span>' +
+                '</button>';
+        }).join("");
+    }
+
     function renderRanking(id, type) {
         var el = document.getElementById(id);
         if (!el) return;
@@ -803,8 +902,9 @@ ORDER BY RN`;
                     '<small>' + escapeHtml(marca) + ' · ' + escapeHtml(cls) + '</small>' +
                 '</span>' +
                 '<span class="stock-review-metrics">' +
+                    '<em>Capital em estoque</em>' +
                     '<b>' + brl(row.M2) + '</b>' +
-                    '<small>Cob. ' + coverage + ' · Demanda ' + num(row.M5,2) + '/mês</small>' +
+                    '<small>Estoque ' + num(row.M3,2) + ' un. · Cob. ' + coverage + ' · Demanda ' + num(row.M5,2) + '/mês</small>' +
                 '</span>' +
                 '</button>';
         }).join("");
@@ -843,28 +943,82 @@ ORDER BY RN`;
         }
     }
 
+    function demandOriginCell(r) {
+        var sales = n(r.DEMANDA_COMERCIAL_12M);
+        var panels = n(r.DEMANDA_PRODUCAO_12M);
+        var total = sales + panels;
+        var pctPanels = total > 0 ? (panels / total) * 100 : 0;
+        var pctSales = total > 0 ? 100 - pctPanels : 0;
+        var origin = String(r.ORIGEM_DEMANDA || "SEM DEMANDA");
+
+        if (total <= 0) {
+            return '<div class="stock-demand-origin empty"><strong>Sem demanda</strong><span>12 meses</span></div>';
+        }
+
+        var label = origin === "PAINEIS" ? "Painéis" : (origin === "VENDAS" ? "Vendas" : "Misto");
+        return '<div class="stock-demand-origin">' +
+            '<div class="stock-demand-origin-head"><strong>' + escapeHtml(label) + '</strong><span>Painéis ' + num(pctPanels,0) + '%</span></div>' +
+            '<div class="stock-demand-mix" aria-label="Vendas ' + num(pctSales,0) + '%, painéis ' + num(pctPanels,0) + '%">' +
+                '<span class="sales" style="width:' + pctSales + '%"></span>' +
+                '<span class="panels" style="width:' + pctPanels + '%"></span>' +
+            '</div>' +
+            '<small>V ' + num(sales,2) + ' · P ' + num(panels,2) + ' /12m</small>' +
+            '</div>';
+    }
+
+    function stockPositionCell(r) {
+        var physical = n(r.ESTOQUE_NOVO_FISICO);
+        var reserved = n(r.RESERVADO_NOVO);
+        var free = n(r.LIVRE_NOVO);
+        var purchase = n(r.COMPRA_ABERTA);
+        var panelReserved = n(r.RESERVA_PAINEIS);
+
+        return '<div class="stock-position">' +
+            '<div class="stock-position-main"><strong>' + num(free,2) + '</strong><span>livre</span></div>' +
+            '<div class="stock-position-detail"><span>Físico <b>' + num(physical,2) + '</b></span><span>Reserv. <b>' + num(reserved,2) + '</b></span></div>' +
+            '<div class="stock-position-flags">' +
+                (panelReserved > 0 ? '<span class="panel-reserve">Painéis ' + num(panelReserved,2) + '</span>' : '') +
+                (purchase > 0 ? '<span class="purchase">+ Compra ' + num(purchase,2) + '</span>' : '') +
+            '</div>' +
+            '</div>';
+    }
+
+    function coverageCell(r) {
+        var hasDemand = n(r.DEMANDA_REFERENCIA) > 0;
+        if (!hasDemand) return '<div class="stock-coverage-cell"><strong>—</strong><span>sem demanda</span></div>';
+
+        var current = n(r.COBERTURA_ATUAL_MESES);
+        var future = n(r.COBERTURA_PROJETADA_MESES);
+        var tone = current < 1 ? "danger" : (current < 2 ? "warning" : (current > 6 ? "high" : "ok"));
+
+        return '<div class="stock-coverage-cell ' + tone + '">' +
+            '<strong>' + num(current,2) + ' m</strong>' +
+            '<span>→ ' + num(future,2) + ' m com compras</span>' +
+            '</div>';
+    }
+
     function renderTable() {
         syncSortHeaders();
         var tbody = document.getElementById("stockTableBody");
         if (!tbody) return;
 
-        tbody.innerHTML = allRows.length ? allRows.map(function (r) {
-            var neg = n(r.SALDO_NEGATIVO_NOVO);
-            return '<tr>' +
-                '<td><div class="stock-product"><strong>' + escapeHtml(String(r.CODPROD || "").padStart(6,"0")) + '</strong><span>' + escapeHtml(r.DESCRPROD || "") + '</span></div></td>' +
+        tbody.innerHTML = allRows.length ? allRows.map(function (r, idx) {
+            return '<tr class="stock-data-row">' +
+                '<td><button class="stock-product stock-product-hover" type="button" data-stock-tooltip-index="' + idx + '">' +
+                    '<strong>' + escapeHtml(String(r.CODPROD || "").padStart(6,"0")) + '</strong>' +
+                    '<span>' + escapeHtml(r.DESCRPROD || "") + '</span>' +
+                    '<small>Detalhes ao passar o mouse</small>' +
+                '</button></td>' +
                 '<td><div class="stock-product-meta"><strong>' + escapeHtml(r.MARCA || "—") + '</strong><span>' + escapeHtml(r.DESCRGRUPOPROD || "Sem grupo") + '</span></div></td>' +
-                '<td class="num">' + num(r.ESTOQUE_NOVO_FISICO,2) + (neg < 0 ? '<span class="stock-neg-flag"> ' + num(neg,2) + '</span>' : '') + '</td>' +
-                '<td class="num">' + num(r.RESERVADO_NOVO,2) + '</td>' +
-                '<td class="num">' + num(r.LIVRE_NOVO,2) + '</td>' +
-                '<td class="num">' + num(r.COMPRA_ABERTA,2) + '</td>' +
-                '<td class="num"><strong>' + num(r.DEMANDA_REFERENCIA,2) + '</strong></td>' +
-                '<td class="num">' + (n(r.DEMANDA_REFERENCIA) > 0 ? num(r.COBERTURA_ATUAL_MESES,2) + ' m' : '—') + '</td>' +
-                '<td class="num">' + (n(r.DEMANDA_REFERENCIA) > 0 ? num(r.COBERTURA_PROJETADA_MESES,2) + ' m' : '—') + '</td>' +
+                '<td>' + stockPositionCell(r) + '</td>' +
+                '<td>' + demandOriginCell(r) + '</td>' +
+                '<td class="num stock-demand-ref"><strong>' + num(r.DEMANDA_REFERENCIA,2) + '</strong><span>/mês</span></td>' +
+                '<td>' + coverageCell(r) + '</td>' +
                 '<td><div class="stock-recurrence"><strong>' + escapeHtml(r.PERFIL_RECORRENCIA || "—") + '</strong><span>' + intFmt(r.MESES_COM_DEMANDA_12M) + '/12 meses</span></div></td>' +
                 '<td>' + classBadge(r.CLASSIFICACAO_ESTOQUE) + '</td>' +
                 '<td>' + supplyBadge(r.SINAL_ABASTECIMENTO) + '</td>' +
                 '</tr>';
-        }).join("") : '<tr><td colspan="12" class="stock-empty-cell">Nenhum produto encontrado.</td></tr>';
+        }).join("") : '<tr><td colspan="9" class="stock-empty-cell">Nenhum produto encontrado.</td></tr>';
 
         var pages = Math.max(1, Math.ceil(totalFiltered / pageSize));
         var start = totalFiltered ? ((page - 1) * pageSize) + 1 : 0;
@@ -891,7 +1045,7 @@ ORDER BY RN`;
     }
 
     function clearFilters(loadNow) {
-        ["stockSearch","stockClassFilter","stockSupplyFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
+        ["stockSearch","stockClassFilter","stockSupplyFilter","stockOriginFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.value = "";
         });
@@ -908,17 +1062,70 @@ ORDER BY RN`;
         if (panel && panel.scrollIntoView) panel.scrollIntoView({behavior:"smooth",block:"start"});
     }
 
+    function buildProductTooltip(r) {
+        var physical = n(r.ESTOQUE_NOVO_FISICO);
+        var unitValue = physical > 0 ? n(r.VALOR_ESTOQUE_NOVO) / physical : 0;
+
+        return '<div class="stock-tooltip-head">' +
+            '<div><strong>' + escapeHtml(String(r.CODPROD || "").padStart(6,"0")) + '</strong><span>' + escapeHtml(r.DESCRPROD || "") + '</span></div>' +
+            '<b>' + escapeHtml(r.MARCA || "Sem marca") + '</b>' +
+        '</div>' +
+        '<div class="stock-tooltip-grid">' +
+            '<div><span>Capital em estoque</span><strong>' + brl(r.VALOR_ESTOQUE_NOVO) + '</strong></div>' +
+            '<div><span>Valor médio aplicado</span><strong>' + brl(unitValue) + '/un.</strong></div>' +
+            '<div><span>Físico / Livre</span><strong>' + num(r.ESTOQUE_NOVO_FISICO,2) + ' / ' + num(r.LIVRE_NOVO,2) + '</strong></div>' +
+            '<div><span>Reservado total</span><strong>' + num(r.RESERVADO_NOVO,2) + '</strong></div>' +
+            '<div><span>Reserva para painéis</span><strong>' + num(r.RESERVA_PAINEIS,2) + '</strong></div>' +
+            '<div><span>Compra aberta</span><strong>' + num(r.COMPRA_ABERTA,2) + '</strong></div>' +
+        '</div>' +
+        '<div class="stock-tooltip-demand">' +
+            '<div class="sales"><strong>Vendas</strong><span>90D ' + num(r.DEMANDA_COMERCIAL_90D,2) + ' · 12M ' + num(r.DEMANDA_COMERCIAL_12M,2) + '</span></div>' +
+            '<div class="panels"><strong>Painéis</strong><span>90D ' + num(r.DEMANDA_PRODUCAO_90D,2) + ' · 12M ' + num(r.DEMANDA_PRODUCAO_12M,2) + '</span></div>' +
+        '</div>' +
+        '<div class="stock-tooltip-footer">' +
+            '<span>Cobertura <b>' + (n(r.DEMANDA_REFERENCIA)>0 ? num(r.COBERTURA_ATUAL_MESES,2)+' m → '+num(r.COBERTURA_PROJETADA_MESES,2)+' m' : 'sem demanda') + '</b></span>' +
+            '<span>Recorrência <b>' + intFmt(r.MESES_COM_DEMANDA_12M) + '/12 meses</b></span>' +
+        '</div>';
+    }
+
+    function showProductTooltip(target, row) {
+        var tip = document.getElementById("stockProductTooltip");
+        if (!tip || !row) return;
+        tip.innerHTML = buildProductTooltip(row);
+        tip.hidden = false;
+
+        var rect = target.getBoundingClientRect();
+        var tipRect = tip.getBoundingClientRect();
+        var left = rect.right + 12;
+        var top = rect.top;
+
+        if (left + tipRect.width > window.innerWidth - 12) {
+            left = rect.left - tipRect.width - 12;
+        }
+        if (top + tipRect.height > window.innerHeight - 12) {
+            top = Math.max(12, window.innerHeight - tipRect.height - 12);
+        }
+
+        tip.style.left = Math.max(12,left) + "px";
+        tip.style.top = Math.max(12,top) + "px";
+    }
+
+    function hideProductTooltip() {
+        var tip = document.getElementById("stockProductTooltip");
+        if (tip) tip.hidden = true;
+    }
+
     function handleTableError(e) {
         console.error("[DM-DASHBOARD][Estoque][Tabela]", e);
         setText("stockTableSummary", "Erro ao consultar produtos");
         var tbody = document.getElementById("stockTableBody");
-        if (tbody) tbody.innerHTML = '<tr><td colspan="12" class="stock-empty-cell">Não foi possível carregar a tabela. Consulte o console (F12).</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="stock-empty-cell">Não foi possível carregar a tabela. Consulte o console (F12).</td></tr>';
     }
 
     var searchTimer = null;
 
     function bindControls() {
-        ["stockClassFilter","stockSupplyFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
+        ["stockClassFilter","stockSupplyFilter","stockOriginFilter","stockBrandFilter","stockGroupFilter"].forEach(function (id) {
             var el = document.getElementById(id);
             if (!el || el.dataset.stockBound) return;
             el.dataset.stockBound = "1";
@@ -1000,6 +1207,30 @@ ORDER BY RN`;
             });
         }
 
+        document.addEventListener("mouseover", function (e) {
+            var target = e.target.closest ? e.target.closest("[data-stock-tooltip-index]") : null;
+            if (!target) return;
+            var idx = Number(target.getAttribute("data-stock-tooltip-index"));
+            if (isFinite(idx) && allRows[idx]) showProductTooltip(target, allRows[idx]);
+        });
+
+        document.addEventListener("mouseout", function (e) {
+            var target = e.target.closest ? e.target.closest("[data-stock-tooltip-index]") : null;
+            if (!target) return;
+            var related = e.relatedTarget;
+            if (related && target.contains(related)) return;
+            hideProductTooltip();
+        });
+
+        document.addEventListener("click", function (e) {
+            var origin = e.target.closest ? e.target.closest("[data-stock-origin-quick]") : null;
+            if (!origin) return;
+            clearFilters(false);
+            var el = document.getElementById("stockOriginFilter");
+            if (el) el.value = origin.getAttribute("data-stock-origin-quick") || "";
+            loadTable(true).catch(handleTableError);
+        });
+
         document.addEventListener("click", function (e) {
             var el = e.target.closest ? e.target.closest("[data-stock-quick],[data-stock-supply-quick],[data-stock-bar-class],[data-stock-bar-supply]") : null;
             if (!el) return;
@@ -1035,8 +1266,10 @@ ORDER BY RN`;
         renderSupplyBars();
         renderRanking("stockBrandRanking","BRAND");
         renderReviewProducts();
+        renderOriginCards();
         fillMetaSelect("stockClassFilter","CLASS","Todas");
         fillMetaSelect("stockSupplyFilter","SUPPLY","Todos");
+        fillMetaSelect("stockOriginFilter","ORIGIN","Todas");
         fillMetaSelect("stockBrandFilter","OPT_BRAND","Todas");
         fillMetaSelect("stockGroupFilter","OPT_GROUP","Todas");
 
