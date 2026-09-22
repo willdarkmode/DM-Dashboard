@@ -3961,3 +3961,80 @@ html[data-dm-theme="light"] .cust-abc-seller,
 html[data-dm-theme="light"] .cust-abc-client-share {
     color: #526174;
 }
+
+
+/* ================================================================
+   V2.24.2 — Contraste residual do tema claro
+   Ajustes focados nos pontos validados visualmente no Sankhya.
+   ================================================================ */
+html[data-dm-theme="light"] .dm-module-status {
+    color: #047857;
+    background: rgba(5, 150, 105, .08);
+    border-color: rgba(5, 150, 105, .20);
+}
+
+/* Curva ABC de clientes */
+html[data-dm-theme="light"] .cust-abc-class-name {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .cust-abc-value-label {
+    color: #64748b;
+}
+
+html[data-dm-theme="light"] .cust-abc-revenue-pct {
+    color: #0f172a;
+}
+
+html[data-dm-theme="light"] .cust-abc-revenue-caption {
+    color: #64748b;
+}
+
+html[data-dm-theme="light"] .cust-abc-client-count {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .cust-abc-client-share {
+    color: #526174;
+}
+
+html[data-dm-theme="light"] .cust-abc-pill {
+    color: #047857;
+    background: rgba(5, 150, 105, .10);
+}
+
+html[data-dm-theme="light"] .class-b .cust-abc-pill {
+    color: #a16207;
+    background: rgba(245, 158, 11, .10);
+}
+
+html[data-dm-theme="light"] .class-c .cust-abc-pill {
+    color: #475569;
+    background: rgba(100, 116, 139, .10);
+}
+
+html[data-dm-theme="light"] .cust-abc-progress {
+    background: #e2e8f0;
+}
+
+/* Desempenho por frente comercial */
+html[data-dm-theme="light"] .perf-type-stat span {
+    color: #64748b;
+}
+
+html[data-dm-theme="light"] .perf-type-stat strong {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .perf-type-conv {
+    color: #334155;
+}
+
+html[data-dm-theme="light"] .perf-type-extra {
+    color: #64748b;
+    border-top-color: rgba(15, 23, 42, .09);
+}
+
+html[data-dm-theme="light"] .perf-type-extra strong {
+    color: #334155;
+}
