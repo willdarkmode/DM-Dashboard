@@ -1176,7 +1176,10 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.25.0: JavaScript único (regras + módulos + navegação + Visão Geral) -->
+<!-- V2.25.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.25.0"
+        charset="UTF-8"
+        onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
 <script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.25.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
