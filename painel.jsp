@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.3"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.4"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.28.3: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.28.4: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -985,7 +985,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.28.3 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.28.4 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1189,7 +1189,7 @@
             </div>
         </section>
 
-        <!-- 6. SEXTO SENTIDO — V2.28.3 / Central de Inteligência -->
+        <!-- 6. SEXTO SENTIDO — V2.28.4 / Central de Inteligência -->
         <section class="dm-page dm-module-page intel-page" id="page-intelligence" data-page-view="intelligence">
             <div class="dm-module-wrap">
                 <div class="dm-module-head intel-head">
@@ -1303,14 +1303,14 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.28.3: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.3"
+<!-- V2.28.4: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.4"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.3"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.4"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar intelligence.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.3"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.4"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>

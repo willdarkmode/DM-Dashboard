@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — Sexto Sentido V2.28.3
+ * DM Dashboard — Sexto Sentido V2.28.4
  * Precisão gerencial + camada de ação: cada sinal pode ser investigado até produtos/clientes.
  */
 (function () {
@@ -688,8 +688,10 @@ FROM ELIGIBLE`;
                 '<strong>' + esc(item.title) + '</strong>' +
                 '<small>' + esc(item.evidence) + '</small>' +
             '</div>' +
-            '<div class="intel-radar-metric"><span>' + esc(primary[0]) + '</span><strong>' + esc(primary[1]) + '</strong></div>' +
-            actionButtons(item) +
+            '<div class="intel-radar-side">' +
+                '<div class="intel-radar-metric"><span>' + esc(primary[0]) + '</span><strong>' + esc(primary[1]) + '</strong></div>' +
+                actionButtons(item) +
+            '</div>' +
         '</article>';
     }
 
