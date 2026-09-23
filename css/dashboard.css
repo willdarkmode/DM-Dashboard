@@ -5377,7 +5377,7 @@ html[data-dm-theme="light"] .stock-review-metrics em { color: #64748b; }
 
 
 /* ================================================================
-   SEXTO SENTIDO — V2.28.1 / CENTRAL DE INTELIGÊNCIA
+   SEXTO SENTIDO — V2.28.2 / CENTRAL DE INTELIGÊNCIA
    ================================================================ */
 .intel-page {
     --intel-line: rgba(148,163,184,.12);
@@ -5729,3 +5729,241 @@ html[data-dm-theme="light"] .intel-top-rank {
 .intel-evidence { font-size:10.5px; }
 .intel-action > strong { font-size:10px; }
 .intel-metrics strong { font-size:10.5px; }
+
+
+/* V2.28.2 — Radar compacto + camada de ação */
+.intel-radar-row {
+    display:grid;
+    grid-template-columns:34px minmax(0,1fr) 150px auto;
+    gap:12px;
+    align-items:center;
+    padding:11px 12px;
+    border-bottom:1px solid rgba(148,163,184,.09);
+    border-left:3px solid #64748b;
+    background:rgba(255,255,255,.012);
+}
+.intel-radar-row:last-child { border-bottom:0; }
+.intel-radar-row.intel-severity-critical { border-left-color:#ef4444; }
+.intel-radar-row.intel-severity-high { border-left-color:#fb923c; }
+.intel-radar-row.intel-severity-opportunity { border-left-color:#60a5fa; }
+.intel-radar-rank {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:28px;
+    height:28px;
+    border-radius:8px;
+    border:1px solid rgba(167,139,250,.18);
+    background:rgba(139,92,246,.06);
+    color:#c4b5fd;
+    font-size:12px;
+    font-weight:900;
+}
+.intel-radar-main { min-width:0; }
+.intel-radar-main strong {
+    display:block;
+    color:#f3f6fb;
+    font-size:11.5px;
+    line-height:1.25;
+}
+.intel-radar-main small {
+    display:block;
+    margin-top:3px;
+    color:#7f8da0;
+    font-size:9px;
+    line-height:1.35;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.intel-radar-type {
+    display:block;
+    margin-bottom:3px;
+    color:#8da0b5;
+    font-size:7.5px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.055em;
+}
+.intel-radar-metric span {
+    display:block;
+    color:#6f8094;
+    font-size:7.5px;
+    text-transform:uppercase;
+}
+.intel-radar-metric strong {
+    display:block;
+    margin-top:3px;
+    color:#dce6f2;
+    font-size:10px;
+}
+.intel-card-actions {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+}
+.intel-card-actions button {
+    padding:6px 9px;
+    border:1px solid rgba(96,165,250,.18);
+    border-radius:7px;
+    background:rgba(59,130,246,.055);
+    color:#9fc3ef;
+    font:inherit;
+    font-size:8.5px;
+    font-weight:750;
+    cursor:pointer;
+}
+.intel-card-actions button:hover {
+    color:#dbeafe;
+    border-color:rgba(96,165,250,.34);
+    background:rgba(59,130,246,.09);
+}
+.intel-radar-row .intel-card-actions {
+    margin:0;
+    justify-content:flex-end;
+}
+.intel-detail-modal[hidden] { display:none; }
+.intel-detail-modal {
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:22px;
+}
+.intel-detail-backdrop {
+    position:absolute;
+    inset:0;
+    border:0;
+    background:rgba(2,6,12,.72);
+    backdrop-filter:blur(3px);
+}
+.intel-detail-dialog {
+    position:relative;
+    z-index:1;
+    width:min(1180px,94vw);
+    max-height:86vh;
+    display:flex;
+    flex-direction:column;
+    border:1px solid rgba(148,163,184,.15);
+    border-radius:14px;
+    background:#0d1624;
+    box-shadow:0 28px 80px rgba(0,0,0,.45);
+    overflow:hidden;
+}
+.intel-detail-head {
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    padding:17px 18px 14px;
+    border-bottom:1px solid rgba(148,163,184,.10);
+}
+.intel-detail-head h2 {
+    margin:3px 0 0;
+    color:#f1f5f9;
+    font-size:16px;
+}
+.intel-detail-head p {
+    margin:5px 0 0;
+    color:#7f8da0;
+    font-size:9.5px;
+}
+.intel-detail-close {
+    width:32px;
+    height:32px;
+    border:1px solid rgba(148,163,184,.12);
+    border-radius:8px;
+    background:rgba(255,255,255,.02);
+    color:#9aa9bb;
+    font-size:19px;
+    cursor:pointer;
+}
+.intel-detail-toolbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:9px 14px;
+    border-bottom:1px solid rgba(148,163,184,.08);
+    color:#7f8da0;
+    font-size:9px;
+}
+.intel-detail-toolbar button {
+    padding:6px 9px;
+    border:1px solid rgba(167,139,250,.2);
+    border-radius:7px;
+    background:rgba(139,92,246,.06);
+    color:#c4b5fd;
+    font:inherit;
+    font-size:8.5px;
+    font-weight:750;
+    cursor:pointer;
+}
+.intel-detail-toolbar button:disabled {
+    opacity:.4;
+    cursor:not-allowed;
+}
+.intel-detail-body {
+    min-height:180px;
+    overflow:auto;
+}
+.intel-detail-loading,
+.intel-detail-empty {
+    padding:36px 18px;
+    color:#7f8da0;
+    text-align:center;
+    font-size:10px;
+}
+.intel-detail-empty.is-error { color:#fca5a5; }
+.intel-detail-table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:9px;
+}
+.intel-detail-table th {
+    position:sticky;
+    top:0;
+    z-index:1;
+    padding:8px 10px;
+    background:#111c2c;
+    color:#7f90a5;
+    text-align:left;
+    font-size:7.5px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    border-bottom:1px solid rgba(148,163,184,.10);
+}
+.intel-detail-table td {
+    padding:8px 10px;
+    color:#c8d3df;
+    border-bottom:1px solid rgba(148,163,184,.065);
+}
+.intel-detail-table tr:hover td {
+    background:rgba(255,255,255,.018);
+}
+body.intel-modal-open { overflow:hidden; }
+
+html[data-dm-theme="light"] .intel-radar-main strong,
+html[data-dm-theme="light"] .intel-radar-metric strong { color:#1f2937; }
+html[data-dm-theme="light"] .intel-radar-main small,
+html[data-dm-theme="light"] .intel-radar-type { color:#64748b; }
+html[data-dm-theme="light"] .intel-detail-dialog { background:#fff; }
+html[data-dm-theme="light"] .intel-detail-head h2 { color:#111827; }
+html[data-dm-theme="light"] .intel-detail-head p,
+html[data-dm-theme="light"] .intel-detail-toolbar { color:#64748b; }
+html[data-dm-theme="light"] .intel-detail-table th {
+    background:#f8fafc;
+    color:#64748b;
+}
+html[data-dm-theme="light"] .intel-detail-table td { color:#334155; }
+
+@media (max-width:1000px) {
+    .intel-radar-row { grid-template-columns:28px minmax(0,1fr); }
+    .intel-radar-metric,
+    .intel-radar-row .intel-card-actions {
+        grid-column:2;
+    }
+    .intel-radar-row .intel-card-actions { justify-content:flex-start; }
+}
