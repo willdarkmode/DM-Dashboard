@@ -5377,7 +5377,7 @@ html[data-dm-theme="light"] .stock-review-metrics em { color: #64748b; }
 
 
 /* ================================================================
-   SEXTO SENTIDO — V2.28.4 / CENTRAL DE INTELIGÊNCIA
+   SEXTO SENTIDO — V2.28.5 / CENTRAL DE INTELIGÊNCIA
    ================================================================ */
 .intel-page {
     --intel-line: rgba(148,163,184,.12);
@@ -6115,6 +6115,48 @@ html[data-dm-theme="light"] .intel-filters button.is-active b {
     }
     .intel-radar-side {
         grid-column:2;
+        justify-content:flex-start;
+    }
+}
+
+
+/* V2.28.5 — ações do Radar sem overflow */
+.intel-radar-side {
+    display:grid;
+    grid-template-columns:1fr;
+    justify-items:end;
+    align-items:center;
+    gap:7px;
+    width:100%;
+    min-width:0;
+}
+.intel-radar-metric {
+    min-width:0;
+    width:100%;
+    text-align:right;
+}
+.intel-radar-row .intel-card-actions {
+    width:100%;
+    max-width:100%;
+    margin:0;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    gap:6px;
+}
+.intel-radar-row .intel-card-actions button {
+    min-width:auto;
+    max-width:100%;
+    white-space:nowrap;
+    flex:0 0 auto;
+}
+@media (max-width:1180px) {
+    .intel-radar-side {
+        justify-items:start;
+    }
+    .intel-radar-metric {
+        text-align:left;
+    }
+    .intel-radar-row .intel-card-actions {
         justify-content:flex-start;
     }
 }

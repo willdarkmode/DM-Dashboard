@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — Sexto Sentido V2.28.4
+ * DM Dashboard — Sexto Sentido V2.28.5
  * Precisão gerencial + camada de ação: cada sinal pode ser investigado até produtos/clientes.
  */
 (function () {

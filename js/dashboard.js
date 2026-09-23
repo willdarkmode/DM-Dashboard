@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — V2.28.4
+ * DM Dashboard — V2.28.5
  *
  * Arquitetura consolidada:
  * - um único JavaScript de aplicação
@@ -9,7 +9,7 @@
  * Regra financeira validada no DBExplorer em 15/09/2026.
  */
 var DMRules = {
-    version: "2.28.4",
+    version: "2.28.5",
     companies: [1, 2, 3],
     saleTops: [
         8, 2011, 2019, 2022, 2029, 2059, 2073,
@@ -53,7 +53,7 @@ console.info(
 );
 
 /*
- * DM Dashboard — V2.28.4 (consolidado)
+ * DM Dashboard — V2.28.5 (consolidado)
  * Ordem preservada da versão funcional:
  *   1) módulos e navegação (dashboard.js)
  *   2) motor da Visão Geral (antigo tv.js)
