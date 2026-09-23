@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.28.3
+## Arquitetura V2.28.4
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -125,3 +125,14 @@ A Central de Inteligência passa a privilegiar leitura rápida e ação imediata
 - KPI de sinais diferencia **priorizados** de **encontrados**;
 - KPI de capital informa quantos SKUs compõem o capital excedente acionável;
 - textos do Radar e métricas receberam maior contraste e tamanho para uso em 1920×1080.
+
+
+### Radar Executivo refinado — V2.28.4
+
+A validação visual mostrou duas distorções no Radar: evidências ainda pequenas e desalinhamento entre métricas e botões. A V2.28.4 corrige ambos:
+
+- evidência do Radar ampliada e exibida em até duas linhas;
+- lateral direita passa a agrupar métrica e ações no mesmo bloco;
+- botões deixam de deslocar a posição da métrica;
+- espaçamento e largura lateral foram recalibrados para 1920×1080;
+- cards detalhados da Central de oportunidades permanecem densos para preservar quantidade de informação.
