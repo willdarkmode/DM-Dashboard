@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.0"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.1"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.28.0: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.28.1: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -985,7 +985,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.28.0 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.28.1 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1189,7 +1189,7 @@
             </div>
         </section>
 
-        <!-- 6. SEXTO SENTIDO — V2.28.0 / Central de Inteligência -->
+        <!-- 6. SEXTO SENTIDO — V2.28.1 / Central de Inteligência -->
         <section class="dm-page dm-module-page intel-page" id="page-intelligence" data-page-view="intelligence">
             <div class="dm-module-wrap">
                 <div class="dm-module-head intel-head">
@@ -1214,8 +1214,8 @@
                 <div class="intel-kpis">
                     <article class="intel-kpi"><span>Sinais identificados</span><strong id="intelKpiSignals">—</strong><small>riscos + oportunidades</small></article>
                     <article class="intel-kpi priority"><span>Alta prioridade</span><strong id="intelKpiPriorities">—</strong><small>itens para começar agora</small></article>
-                    <article class="intel-kpi commercial"><span>Vínculos comerciais</span><strong id="intelKpiClients">—</strong><small>reativação + histórico comprador</small></article>
-                    <article class="intel-kpi capital"><span>Capital promocional</span><strong id="intelKpiCapital">R$ —</strong><small>estoque com histórico comprador</small></article>
+                    <article class="intel-kpi commercial"><span>Clientes para reativar</span><strong id="intelKpiClients">—</strong><small>clientes únicos com histórico recorrente</small></article>
+                    <article class="intel-kpi capital"><span>Capital com oportunidade</span><strong id="intelKpiCapital">R$ —</strong><small>estoque livre com demanda comprovada</small></article>
                 </div>
 
                 <article class="intel-hero-panel">
@@ -1281,14 +1281,14 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.28.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.0"
+<!-- V2.28.1: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.0"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar intelligence.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.0"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
