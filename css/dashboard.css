@@ -5377,7 +5377,7 @@ html[data-dm-theme="light"] .stock-review-metrics em { color: #64748b; }
 
 
 /* ================================================================
-   SEXTO SENTIDO — V2.28.3 / CENTRAL DE INTELIGÊNCIA
+   SEXTO SENTIDO — V2.28.4 / CENTRAL DE INTELIGÊNCIA
    ================================================================ */
 .intel-page {
     --intel-line: rgba(148,163,184,.12);
@@ -6054,4 +6054,67 @@ html[data-dm-theme="light"] .intel-filters button b {
 html[data-dm-theme="light"] .intel-filters button.is-active b {
     background:#ede9fe;
     color:#6d28d9;
+}
+
+
+/* V2.28.4 — Radar com leitura confortável e lateral agrupada */
+.intel-radar-row {
+    grid-template-columns:40px minmax(0,1fr) 250px;
+    gap:16px;
+    padding:15px 16px;
+    align-items:center;
+}
+.intel-radar-main strong {
+    font-size:14px;
+    line-height:1.35;
+}
+.intel-radar-main small {
+    display:-webkit-box;
+    margin-top:5px;
+    font-size:11.5px;
+    line-height:1.5;
+    white-space:normal;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+}
+.intel-radar-type {
+    margin-bottom:4px;
+    font-size:9px;
+}
+.intel-radar-side {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    min-width:0;
+}
+.intel-radar-metric {
+    min-width:100px;
+}
+.intel-radar-metric span {
+    font-size:9px;
+}
+.intel-radar-metric strong {
+    font-size:12.5px;
+}
+.intel-radar-row .intel-card-actions {
+    margin:0;
+    flex:0 0 auto;
+    justify-content:flex-end;
+}
+.intel-radar-row .intel-card-actions button {
+    min-width:88px;
+    padding:8px 11px;
+    font-size:9.5px;
+}
+@media (max-width:1180px) {
+    .intel-radar-row {
+        grid-template-columns:36px minmax(0,1fr);
+    }
+    .intel-radar-side {
+        grid-column:2;
+        justify-content:flex-start;
+    }
 }
