@@ -1214,7 +1214,7 @@
                 <div class="intel-kpis">
                     <article class="intel-kpi"><span>Sinais identificados</span><strong id="intelKpiSignals">—</strong><small>riscos + oportunidades</small></article>
                     <article class="intel-kpi priority"><span>Alta prioridade</span><strong id="intelKpiPriorities">—</strong><small>itens para começar agora</small></article>
-                    <article class="intel-kpi commercial"><span>Clientes em oportunidade</span><strong id="intelKpiClients">—</strong><small>reativação + campanhas</small></article>
+                    <article class="intel-kpi commercial"><span>Vínculos comerciais</span><strong id="intelKpiClients">—</strong><small>reativação + histórico comprador</small></article>
                     <article class="intel-kpi capital"><span>Capital promocional</span><strong id="intelKpiCapital">R$ —</strong><small>estoque com histórico comprador</small></article>
                 </div>
 
