@@ -5377,7 +5377,7 @@ html[data-dm-theme="light"] .stock-review-metrics em { color: #64748b; }
 
 
 /* ================================================================
-   SEXTO SENTIDO — V2.28.0 / CENTRAL DE INTELIGÊNCIA
+   SEXTO SENTIDO — V2.28.1 / CENTRAL DE INTELIGÊNCIA
    ================================================================ */
 .intel-page {
     --intel-line: rgba(148,163,184,.12);
@@ -5723,3 +5723,9 @@ html[data-dm-theme="light"] .intel-top-rank {
     .intel-top-item { grid-template-columns:28px minmax(0,1fr); }
     .intel-action { grid-template-columns:1fr; gap:4px; }
 }
+
+/* V2.28.1 — legibilidade executiva */
+.intel-card h3 { font-size:14px; }
+.intel-evidence { font-size:10.5px; }
+.intel-action > strong { font-size:10px; }
+.intel-metrics strong { font-size:10.5px; }
