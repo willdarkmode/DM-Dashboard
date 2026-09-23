@@ -16,14 +16,15 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.25.0
+## Arquitetura V2.28.0
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
 - `painel.jsp`: estrutura HTML do componente Sankhya;
 - `css/dashboard.css`: estilos consolidados;
 - `js/dashboard.js`: regras globais, consultas e módulos da aplicação;
-- `js/stock.js`: módulo de Inteligência de Estoque & Compras.
+- `js/stock.js`: módulo de Inteligência de Estoque & Compras;
+- `js/intelligence.js`: Sexto Sentido / Central de Inteligência.
 
 A V2.24.0 adiciona alternância entre tema escuro e claro pelo menu lateral. O escuro continua sendo o padrão e a escolha do usuário é persistida no `localStorage` (`_dm_dashboard_theme`). O tema escolhido também é mantido no Modo TV.\n\nA V2.24.1 refina o contraste do tema claro em textos auxiliares, estados de filtro e tooltip do gráfico, sem alterar SQLs ou regras de negócio.\n\nA V2.24.2 corrige os últimos pontos de contraste identificados na validação visual: selo de status, cards da Curva ABC de clientes e números internos do Desempenho por frente comercial.
 
@@ -67,3 +68,20 @@ A V2.26.1 reduz redundâncias da aba Estoque & Compras: o bloco de capital vira 
 
 
 A V2.27.0 transforma "Produtos para investigação" em uma mesa de decisão: posição de estoque consolidada, origem visual da demanda (Vendas x Painéis), cobertura atual/projetada, filtro rápido por origem e tooltip detalhado por SKU. A tela passa a evidenciar consumo interno de componentes na montagem de painéis, além da venda comercial, e reforça o contraste do tema claro.
+
+
+## Sexto Sentido — Central de Inteligência — V2.28.0
+
+A sexta dimensão do DM Dashboard responde à pergunta: **"O que os dados estão nos dizendo para fazer?"**
+
+A primeira versão cruza regras determinísticas e auditáveis de Estoque & Compras com histórico comercial para priorizar cinco motores:
+
+- **Risco de venda perdida:** SKUs abaixo de 1 mês de cobertura sem compra aberta ou com compra insuficiente;
+- **Compra possivelmente desnecessária:** compra aberta para itens sem saída nos últimos 12 meses;
+- **Promoção sugerida:** capital em excesso/baixa recorrência com histórico recente de compradores;
+- **Reativação comercial:** clientes há mais de 180 dias sem recomprar determinada marca, quando existe estoque livre;
+- **Oportunidade em Painéis:** famílias cujo ritmo de consumo interno nos últimos 90 dias acelerou pelo menos 25% contra a média de 12 meses.
+
+O módulo gera um score interno de prioridade para ordenar os sinais e apresenta um **Radar Executivo — "Se eu só pudesse olhar 5 coisas hoje"**. O score não substitui decisão humana e não cria fatos: evidências, quantidades e valores continuam derivados diretamente das consultas do Sankhya.
+
+A regra de estoque não é duplicada. O Sexto Sentido reutiliza o dataset consolidado exposto por `DMStock.getDatasetPrefix()`, garantindo que cobertura, recorrência, compras e classificação permaneçam coerentes com a aba Estoque & Compras.
