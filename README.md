@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.28.4
+## Arquitetura V2.28.5
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -136,3 +136,12 @@ A validação visual mostrou duas distorções no Radar: evidências ainda peque
 - botões deixam de deslocar a posição da métrica;
 - espaçamento e largura lateral foram recalibrados para 1920×1080;
 - cards detalhados da Central de oportunidades permanecem densos para preservar quantidade de informação.
+
+
+### Correção das ações do Radar — V2.28.5
+
+A lateral direita do Radar foi reorganizada para evitar overflow quando um sinal possui mais de uma ação:
+- métrica fica na linha superior do bloco lateral;
+- botões ficam agrupados logo abaixo;
+- ações quebram linha quando necessário;
+- o texto principal mantém sua largura e nenhum botão ultrapassa o card.
