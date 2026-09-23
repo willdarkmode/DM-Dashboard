@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — Sexto Sentido V2.28.2
+ * DM Dashboard — Sexto Sentido V2.28.3
  * Precisão gerencial + camada de ação: cada sinal pode ser investigado até produtos/clientes.
  */
 (function () {
@@ -8,7 +8,7 @@
     var loadedOnce = false;
     var loading = false;
     var insights = [];
-    var activeFilter = "ALL";
+    var activeFilter = "PRIORITIES";
     var reactivationUniqueClients = 0;
     var totalSignalsFound = 0;
     var detailRows = [];
@@ -694,9 +694,29 @@ FROM ELIGIBLE`;
     }
 
     function filtered() {
-        return activeFilter === "ALL"
-            ? insights.slice()
-            : insights.filter(function (x) { return x.category === activeFilter; });
+        if (activeFilter === "ALL") return insights.slice();
+
+        if (activeFilter === "PRIORITIES") {
+            return insights.filter(function (x) {
+                return x.severity === "CRITICAL" || x.severity === "HIGH";
+            });
+        }
+
+        return insights.filter(function (x) {
+            return x.category === activeFilter;
+        });
+    }
+
+    function filterLabel(key) {
+        return ({
+            ALL: "Todos",
+            PRIORITIES: "Prioridades",
+            COMERCIAL: "Comercial",
+            CAMPANHAS: "Campanhas",
+            ABASTECIMENTO: "Abastecimento",
+            COMPRAS: "Compras",
+            PAINEIS: "Painéis"
+        })[key] || key;
     }
 
     function render() {
@@ -706,14 +726,24 @@ FROM ELIGIBLE`;
             return x.severity === "CRITICAL" || x.severity === "HIGH";
         }).length;
 
-        var capital = insights
-            .filter(function (x) { return x.type === "PROMO"; })
-            .reduce(function (sum, x) { return sum + n(x.capital); }, 0);
+        var promoInsights = insights.filter(function (x) {
+            return x.type === "PROMO";
+        });
+
+        var capital = promoInsights.reduce(function (sum, x) {
+            return sum + n(x.capital);
+        }, 0);
+
+        var promoSkus = promoInsights.reduce(function (sum, x) {
+            return sum + n(x.count);
+        }, 0);
 
         setText("intelKpiSignals", intFmt(insights.length));
+        setText("intelKpiSignalsNote", "de " + intFmt(totalSignalsFound) + " sinais encontrados");
         setText("intelKpiPriorities", intFmt(high));
         setText("intelKpiClients", intFmt(reactivationUniqueClients));
         setText("intelKpiCapital", brl(capital));
+        setText("intelKpiCapitalNote", intFmt(promoSkus) + " SKUs acima da cobertura de segurança");
 
         var top = document.getElementById("intelTopFive");
         var all = document.getElementById("intelAllSignals");
@@ -732,21 +762,45 @@ FROM ELIGIBLE`;
                 : '<div class="intel-empty">Nenhum sinal encontrado para este filtro.</div>';
         }
 
-        setText(
-            "intelSignalsCount",
-            intFmt(rows.length) + " priorizados" +
-            (activeFilter === "ALL" ? " de " + intFmt(totalSignalsFound) + " sinais encontrados" : "")
-        );
+        var listText = intFmt(rows.length) + " sinais";
+        if (activeFilter === "PRIORITIES") {
+            listText += " críticos ou de alta prioridade";
+        } else if (activeFilter === "ALL") {
+            listText += " priorizados de " + intFmt(totalSignalsFound) + " encontrados";
+        } else {
+            listText += " priorizados nesta categoria";
+        }
+        setText("intelSignalsCount", listText);
+
         setText(
             "intelContext",
             "Leitura acionável · capital excedente preserva " + RULES.promoSafetyMonths +
             " meses · clientes recorrentes · dados atuais do Sankhya"
         );
 
+        var counts = {
+            ALL: insights.length,
+            PRIORITIES: high,
+            COMERCIAL: 0,
+            CAMPANHAS: 0,
+            ABASTECIMENTO: 0,
+            COMPRAS: 0,
+            PAINEIS: 0
+        };
+
+        insights.forEach(function (item) {
+            if (counts[item.category] != null) counts[item.category]++;
+        });
+
         document.querySelectorAll("[data-intel-filter]").forEach(function (button) {
-            var active = button.getAttribute("data-intel-filter") === activeFilter;
+            var key = button.getAttribute("data-intel-filter");
+            var active = key === activeFilter;
+
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", active ? "true" : "false");
+            button.innerHTML =
+                '<span>' + esc(filterLabel(key)) + '</span>' +
+                '<b>' + intFmt(counts[key] || 0) + '</b>';
         });
     }
 
