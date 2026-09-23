@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.28.2
+## Arquitetura V2.28.3
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -113,3 +113,15 @@ O Sexto Sentido passa a conectar o insight diretamente à execução:
 - reativação exige pelo menos 3 pedidos em 3 meses distintos no histórico recente;
 - sinais de Painéis passam a exibir a evolução de ritmo 12M → 90D em unidades/mês;
 - KPI de sinais diferencia sinais encontrados de sinais efetivamente priorizados na tela.
+
+
+### Legibilidade e foco executivo — V2.28.3
+
+A Central de Inteligência passa a privilegiar leitura rápida e ação imediata:
+
+- tipografia ampliada no Radar, cards, filtros e modal de investigação;
+- visão padrão da lista passa a ser **Prioridades**, mostrando apenas sinais Críticos e de Alta Prioridade;
+- filtros exibem contadores por categoria;
+- KPI de sinais diferencia **priorizados** de **encontrados**;
+- KPI de capital informa quantos SKUs compõem o capital excedente acionável;
+- textos do Radar e métricas receberam maior contraste e tamanho para uso em 1920×1080.
