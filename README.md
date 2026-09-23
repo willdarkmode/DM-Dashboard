@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.28.1
+## Arquitetura V2.28.2
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -98,3 +98,18 @@ A primeira validação com dados reais mostrou excesso de sinais e saturação d
 - reativação exige histórico recorrente (mínimo de 2 pedidos em 2 meses distintos);
 - KPI comercial passa a contar clientes únicos elegíveis para reativação;
 - quantidade de sinais exibidos é limitada por categoria para preservar foco executivo.
+
+
+### Precisão gerencial e ação — V2.28.2
+
+O Sexto Sentido passa a conectar o insight diretamente à execução:
+
+- Radar Executivo compacto para permitir leitura das cinco prioridades sem grande rolagem;
+- botões **Ver produtos**, **Ver clientes** e **Ver itens de compra** nos sinais aplicáveis;
+- detalhe carregado sob demanda em modal, mantendo o contexto do insight;
+- lista detalhada pode ser copiada para encaminhamento ao time;
+- capital de oportunidade passa a considerar somente o excesso acima de 4 meses de cobertura de segurança;
+- oportunidades sem marca deixam de participar do Radar principal;
+- reativação exige pelo menos 3 pedidos em 3 meses distintos no histórico recente;
+- sinais de Painéis passam a exibir a evolução de ritmo 12M → 90D em unidades/mês;
+- KPI de sinais diferencia sinais encontrados de sinais efetivamente priorizados na tela.

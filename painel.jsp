@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.1"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.2"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.28.1: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.28.2: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -985,7 +985,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.28.1 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.28.2 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1189,7 +1189,7 @@
             </div>
         </section>
 
-        <!-- 6. SEXTO SENTIDO — V2.28.1 / Central de Inteligência -->
+        <!-- 6. SEXTO SENTIDO — V2.28.2 / Central de Inteligência -->
         <section class="dm-page dm-module-page intel-page" id="page-intelligence" data-page-view="intelligence">
             <div class="dm-module-wrap">
                 <div class="dm-module-head intel-head">
@@ -1253,7 +1253,28 @@
                 </article>
 
                 <div class="intel-method-note">
-                    <strong>Como ler:</strong> o Sexto Sentido não substitui decisão humana. Ele cruza regras objetivas já existentes no dashboard e destaca situações que merecem investigação. O score serve apenas para ordenar prioridades; a evidência exibida permanece auditável nos dados do Sankhya.
+                    <strong>Como ler:</strong> o Sexto Sentido não substitui decisão humana. Ele cruza regras objetivas já existentes no dashboard e destaca situações que merecem investigação. Cada insight pode ser aberto até os produtos ou clientes que originaram o sinal.
+                </div>
+
+                <div class="intel-detail-modal" id="intelDetailModal" hidden>
+                    <button class="intel-detail-backdrop" type="button" data-intel-modal-close aria-label="Fechar detalhe"></button>
+                    <section class="intel-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="intelDetailTitle">
+                        <header class="intel-detail-head">
+                            <div>
+                                <span class="intel-eyebrow">Investigação do sinal</span>
+                                <h2 id="intelDetailTitle">Detalhe</h2>
+                                <p id="intelDetailSubtitle"></p>
+                            </div>
+                            <button class="intel-detail-close" type="button" data-intel-modal-close aria-label="Fechar">×</button>
+                        </header>
+                        <div class="intel-detail-toolbar">
+                            <span id="intelDetailCount">—</span>
+                            <button id="intelDetailCopy" type="button" disabled>Copiar lista</button>
+                        </div>
+                        <div class="intel-detail-body" id="intelDetailTable">
+                            <div class="intel-detail-loading">Aguardando consulta...</div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </section>
@@ -1281,14 +1302,14 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.28.1: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.1"
+<!-- V2.28.2: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.2"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.1"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.2"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar intelligence.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.1"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.2"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
