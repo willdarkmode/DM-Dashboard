@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — Estoque & Compras V1 · UX V2.26.0
+ * DM Dashboard — Estoque & Compras V1 · integração V2.28.0
  * Fonte: Sankhya executeQuery()
  */
 (function () {
@@ -1311,6 +1311,7 @@ ORDER BY RN`;
 
     window.DMStock = {
         ensureLoaded:function () { load(false); },
-        reload:function () { load(true); }
+        reload:function () { load(true); },
+        getDatasetPrefix:function () { return sqlDatasetPrefix(); }
     };
 })();
