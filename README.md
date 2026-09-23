@@ -16,7 +16,7 @@ Regras desta versão:
   utilizados no Monitor externo (Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi).
 - Atualização automática: 5 minutos.
 
-## Arquitetura V2.28.0
+## Arquitetura V2.28.1
 
 A aplicação usa uma estrutura enxuta, sem loader intermediário:
 
@@ -85,3 +85,16 @@ A primeira versão cruza regras determinísticas e auditáveis de Estoque & Comp
 O módulo gera um score interno de prioridade para ordenar os sinais e apresenta um **Radar Executivo — "Se eu só pudesse olhar 5 coisas hoje"**. O score não substitui decisão humana e não cria fatos: evidências, quantidades e valores continuam derivados diretamente das consultas do Sankhya.
 
 A regra de estoque não é duplicada. O Sexto Sentido reutiliza o dataset consolidado exposto por `DMStock.getDatasetPrefix()`, garantindo que cobertura, recorrência, compras e classificação permaneçam coerentes com a aba Estoque & Compras.
+
+
+### Calibração V2.28.1
+
+A primeira validação com dados reais mostrou excesso de sinais e saturação do score. A V2.28.1 reduz ruído e melhora a utilidade gerencial:
+
+- Radar Executivo prefere diversidade entre Comercial, Campanhas, Abastecimento, Compras e Painéis, sem forçar categoria sem sinal relevante;
+- score numérico deixa de ser exibido ao usuário e passa a servir apenas para ordenação;
+- risco de ruptura exige recorrência mínima de 6 meses e demanda de referência mínima de 0,5 unidade/mês;
+- oportunidades comerciais de estoque consideram somente estoque livre, demanda comercial comprovada e ao menos 2 clientes históricos por SKU;
+- reativação exige histórico recorrente (mínimo de 2 pedidos em 2 meses distintos);
+- KPI comercial passa a contar clientes únicos elegíveis para reativação;
+- quantidade de sinais exibidos é limitada por categoria para preservar foco executivo.
