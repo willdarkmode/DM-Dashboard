@@ -32,9 +32,9 @@
 
     <!-- Assets externos — V2.18 -->
 <link rel="stylesheet"
-          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.27.0"
+          href="https://willdarkmode.github.io/DM-Dashboard/css/dashboard.css?v=2.28.0"
           onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.css remoto.')" />
-    <!-- V2.27.0: CSS consolidado (Visão Geral + módulos + navegação) -->
+    <!-- V2.28.0: CSS consolidado (Visão Geral + módulos + navegação) -->
 </head>
 <body>
 <div class="dm-app">
@@ -82,6 +82,13 @@
                     <svg viewBox="0 0 24 24"><path d="M3 7 12 3l9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/><path d="M17 13h4"/><path d="M19 11v4"/></svg>
                 </span>
                 <span class="dm-nav-label">Estoque</span>
+            </button>
+
+            <button class="dm-nav-item dm-nav-intelligence" type="button" data-page="intelligence" title="Sexto Sentido — Central de Inteligência" aria-label="Sexto Sentido — Central de Inteligência">
+                <span class="dm-nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-3.7 10.7c.8.6 1.2 1.4 1.2 2.3h5c0-.9.4-1.7 1.2-2.3A6 6 0 0 0 12 3z"/><path d="M9.5 19h5"/><path d="M10.5 22h3"/><path d="M12 1v1"/><path d="m4.2 4.2.8.8"/><path d="m19 5 .8-.8"/><path d="M2 12h1"/><path d="M21 12h1"/></svg>
+                </span>
+                <span class="dm-nav-label">Sexto Sentido</span>
             </button>
         </nav>
 
@@ -978,7 +985,7 @@
             </div>
         </section>
 
-        <!-- 5. ESTOQUE & COMPRAS — V2.27.0 / Inteligência de Estoque -->
+        <!-- 5. ESTOQUE & COMPRAS — V2.28.0 / Inteligência de Estoque -->
         <section class="dm-page dm-module-page stock-page" id="page-stock" data-page-view="stock">
             <div class="dm-module-wrap">
                 <div class="dm-module-head stock-head">
@@ -1182,6 +1189,75 @@
             </div>
         </section>
 
+        <!-- 6. SEXTO SENTIDO — V2.28.0 / Central de Inteligência -->
+        <section class="dm-page dm-module-page intel-page" id="page-intelligence" data-page-view="intelligence">
+            <div class="dm-module-wrap">
+                <div class="dm-module-head intel-head">
+                    <div>
+                        <div class="dm-module-kicker">Sexto Sentido</div>
+                        <h1 class="dm-module-title">Central de Inteligência</h1>
+                        <p class="dm-module-desc">O que os dados estão nos dizendo para fazer? Uma leitura automática de riscos, oportunidades e ações prioritárias cruzando estoque, compras, clientes, vendas e painéis.</p>
+                    </div>
+                    <div class="perf-head-side">
+                        <div class="dm-module-status">Inteligência · <span data-dm-version></span></div>
+                        <div class="perf-update-time" id="intelUpdatedAt">Aguardando primeira análise</div>
+                    </div>
+                </div>
+
+                <div class="intel-toolbar">
+                    <div class="intel-context" id="intelContext">Aguardando leitura dos dados...</div>
+                    <button class="perf-action-btn secondary" id="intelRefreshBtn" type="button" title="Reprocessar inteligência" aria-label="Reprocessar inteligência">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5"/><path d="M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5"/></svg>
+                    </button>
+                </div>
+
+                <div class="intel-kpis">
+                    <article class="intel-kpi"><span>Sinais identificados</span><strong id="intelKpiSignals">—</strong><small>riscos + oportunidades</small></article>
+                    <article class="intel-kpi priority"><span>Alta prioridade</span><strong id="intelKpiPriorities">—</strong><small>itens para começar agora</small></article>
+                    <article class="intel-kpi commercial"><span>Clientes em oportunidade</span><strong id="intelKpiClients">—</strong><small>reativação + campanhas</small></article>
+                    <article class="intel-kpi capital"><span>Capital promocional</span><strong id="intelKpiCapital">R$ —</strong><small>estoque com histórico comprador</small></article>
+                </div>
+
+                <article class="intel-hero-panel">
+                    <div class="intel-section-head">
+                        <div>
+                            <span class="intel-eyebrow">Radar Executivo</span>
+                            <h2>Se eu só pudesse olhar 5 coisas hoje</h2>
+                            <p>Os sinais abaixo são priorizados por urgência, impacto e relevância operacional.</p>
+                        </div>
+                    </div>
+                    <div class="intel-top-five" id="intelTopFive">
+                        <div class="intel-empty">Analisando prioridades...</div>
+                    </div>
+                </article>
+
+                <article class="intel-signals-panel">
+                    <div class="intel-section-head intel-signals-head">
+                        <div>
+                            <span class="intel-eyebrow">Todos os sinais</span>
+                            <h2>Central de oportunidades e riscos</h2>
+                            <p id="intelSignalsCount">Aguardando dados...</p>
+                        </div>
+                        <div class="intel-filters" role="group" aria-label="Filtrar sinais">
+                            <button type="button" class="is-active" data-intel-filter="ALL">Todos</button>
+                            <button type="button" data-intel-filter="COMERCIAL">Comercial</button>
+                            <button type="button" data-intel-filter="CAMPANHAS">Campanhas</button>
+                            <button type="button" data-intel-filter="ABASTECIMENTO">Abastecimento</button>
+                            <button type="button" data-intel-filter="COMPRAS">Compras</button>
+                            <button type="button" data-intel-filter="PAINEIS">Painéis</button>
+                        </div>
+                    </div>
+                    <div class="intel-all-signals" id="intelAllSignals">
+                        <div class="intel-empty">Aguardando análise...</div>
+                    </div>
+                </article>
+
+                <div class="intel-method-note">
+                    <strong>Como ler:</strong> o Sexto Sentido não substitui decisão humana. Ele cruza regras objetivas já existentes no dashboard e destaca situações que merecem investigação. O score serve apenas para ordenar prioridades; a evidência exibida permanece auditável nos dados do Sankhya.
+                </div>
+            </div>
+        </section>
+
     </main>
 </div>
 
@@ -1205,11 +1281,14 @@
     TGFCAB.VLRNOTA é rateado proporcionalmente entre os itens para manter o fechamento financeiro.
     Fabricantes usam TGFPRO.CODMARCA/MARCA; Soluções próprias usam os grupos 4010000 e 7010000.
 -->
-<!-- V2.27.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.27.0"
+<!-- V2.28.0: módulo Estoque carregado antes do core para restaurar a aba corretamente -->
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/stock.js?v=2.28.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar stock.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.27.0"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.0"
+        charset="UTF-8"
+        onerror="console.error('[DM-DASHBOARD] Falha ao carregar intelligence.js remoto.');"></script>
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.0"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
