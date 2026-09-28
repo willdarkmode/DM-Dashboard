@@ -4664,6 +4664,8 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
   }
 
   function render(d, cached) {
+    window.DMOverviewData = d;
+    try { document.dispatchEvent(new CustomEvent("dm:overview")); } catch (e) {}
     var fat = d.faturamento || {};
     var est = d.estoque || {};
     var meta = d.metas || {};

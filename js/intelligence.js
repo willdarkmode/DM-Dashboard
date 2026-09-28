@@ -669,7 +669,7 @@ FROM ELIGIBLE`;
         return '<article class="intel-card intel-severity-' + item.severity.toLowerCase() + (compact ? ' is-compact' : '') + '">' +
             '<div class="intel-card-top">' +
                 '<span class="intel-type"><b>' + esc(icon(item.category)) + '</b>' + esc(catLabel(item.category)) + '</span>' +
-                '<span class="intel-priority">' + esc(sevLabel(item.severity)) + '</span>' +
+                '<span class="intel-priority">' + (item.isNew ? '<em class="intel-new">Novo</em>' : '') + esc(sevLabel(item.severity)) + '</span>' +
             '</div>' +
             '<h3>' + esc(item.title) + '</h3>' +
             '<p class="intel-evidence">' + esc(item.evidence) + '</p>' +
@@ -684,7 +684,7 @@ FROM ELIGIBLE`;
         return '<article class="intel-radar-row intel-severity-' + item.severity.toLowerCase() + '">' +
             '<span class="intel-radar-rank">' + (index + 1) + '</span>' +
             '<div class="intel-radar-main">' +
-                '<span class="intel-radar-type">' + esc(catLabel(item.category)) + ' · ' + esc(sevLabel(item.severity)) + '</span>' +
+                '<span class="intel-radar-type">' + esc(catLabel(item.category)) + ' · ' + esc(sevLabel(item.severity)) + (item.isNew ? ' · Novo' : '') + '</span>' +
                 '<strong>' + esc(item.title) + '</strong>' +
                 '<small>' + esc(item.evidence) + '</small>' +
             '</div>' +
@@ -805,6 +805,119 @@ FROM ELIGIBLE`;
                 '<b>' + intFmt(counts[key] || 0) + '</b>';
         });
     }
+
+    /* ---------- Briefing do dia + "novo desde a última visita" ---------- */
+    var SEEN_KEY = "_dm_intel_seen_v1";
+    var previousSeen = null;
+
+    function insightKey(x) { return x.type + "|" + x.group; }
+
+    function readSeen() {
+        try {
+            var raw = localStorage.getItem(SEEN_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    }
+
+    function markNew() {
+        previousSeen = readSeen();
+        insights.forEach(function (x) {
+            x.isNew = !!(previousSeen && previousSeen.keys && !previousSeen.keys[insightKey(x)]);
+        });
+    }
+
+    function saveSeen() {
+        try {
+            var keys = {};
+            insights.forEach(function (x) { keys[insightKey(x)] = 1; });
+            localStorage.setItem(SEEN_KEY, JSON.stringify({ at: Date.now(), keys: keys }));
+        } catch (e) {}
+    }
+
+    function pctFmt(v) { return num(v, 0) + "%"; }
+
+    function renderBrief() {
+        var list = document.getElementById("intelBriefList");
+        var metaEl = document.getElementById("intelBriefMeta");
+        var since = document.getElementById("intelBriefSince");
+        if (!list) return;
+
+        var lines = [];
+        var d = window.DMOverviewData;
+        var meta = 0, fatPrev = 0, previsto = 0, chance = 0;
+
+        if (d && d.ritmo_meta && d.metas && n(d.metas.META_BASE) > 0) {
+            var r = d.ritmo_meta, f = d.faturamento || {};
+            meta = n(d.metas.META_BASE);
+            fatPrev = n(f["Faturado + Previsto"]);
+            previsto = n(f["Total Previsto"]);
+            chance = n(f["Grande Chance"]);
+            var rest = n(r.valor_restante);
+
+            if (rest <= 0) {
+                lines.push({ tone: "good", html: "<b>Meta comercial atingida</b> considerando faturado + previsto (" + pctFmt(fatPrev / meta * 100) + " da meta)." });
+            } else {
+                var cover = previsto > 0 ? " O previsto em aberto soma " + brl(previsto) + ", com " + brl(chance) + " em grande chance." : "";
+                lines.push({
+                    tone: r.dias_uteis_restantes <= 5 ? "bad" : "warn",
+                    html: "<b>Faltam " + brl(rest) + " para a meta</b> em " + intFmt(r.dias_uteis_restantes) +
+                          " dias úteis (" + brl(r.necessario_por_dia_util) + " por dia)." + cover
+                });
+            }
+
+            var cmp = d.comparativo_ano_anterior;
+            if (cmp && n(cmp.valor) !== 0) {
+                var v = n(cmp.variacao_percentual);
+                lines.push({
+                    tone: v >= 0 ? "good" : "warn",
+                    html: "Faturado + previsto está <b>" + (v >= 0 ? "+" : "") + num(v, 1) + "%</b> em relação ao mesmo período de " + cmp.ano + "."
+                });
+            }
+        }
+
+        var urgent = insights.filter(function (x) { return x.severity === "CRITICAL" || x.severity === "HIGH"; });
+        if (urgent.length) {
+            lines.push({
+                tone: "bad",
+                html: "<b>" + intFmt(urgent.length) + " sinais de alta prioridade.</b> O mais urgente: " + esc(urgent[0].title) + "."
+            });
+        }
+
+        if (reactivationUniqueClients > 0) {
+            lines.push({ tone: "info", html: "<b>" + intFmt(reactivationUniqueClients) + " clientes recorrentes</b> pararam de comprar e há estoque livre para atendê-los." });
+        }
+
+        var capital = insights.filter(function (x) { return x.type === "PROMO"; })
+            .reduce(function (s, x) { return s + n(x.capital); }, 0);
+        if (capital > 0) {
+            lines.push({ tone: "info", html: "<b>" + brl(capital) + " em estoque excedente</b> pode virar campanha sem comprometer a cobertura de segurança." });
+        }
+
+        var fresh = insights.filter(function (x) { return x.isNew; });
+        if (fresh.length) {
+            lines.push({ tone: "warn", html: "<b>" + intFmt(fresh.length) + " sinais novos</b> desde a sua última visita (marcados com “Novo”)." });
+        }
+
+        list.innerHTML = lines.length
+            ? lines.map(function (l) { return '<li class="is-' + l.tone + '">' + l.html + '</li>'; }).join("")
+            : "<li>Aguardando dados para montar o briefing...</li>";
+
+        if (metaEl) {
+            metaEl.innerHTML = meta > 0
+                ? '<span><small>Meta</small><strong>' + brl(meta) + '</strong></span>' +
+                  '<span><small>Faturado + previsto</small><strong>' + brl(fatPrev) + '</strong></span>' +
+                  '<span><small>Atingimento</small><strong>' + pctFmt(fatPrev / meta * 100) + '</strong></span>'
+                : "";
+        }
+
+        if (since) {
+            since.textContent = previousSeen && previousSeen.at
+                ? "Última visita: " + new Date(previousSeen.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+                : "Primeira leitura neste navegador";
+        }
+    }
+
+    document.addEventListener("dm:overview", function () { if (loadedOnce) renderBrief(); });
 
     function findInsight(uid) {
         uid = Number(uid);
@@ -1226,7 +1339,10 @@ WHERE ROWNUM <= ${limit}`;
                     .filter(function (x) { return !!x; })
             );
 
+            markNew();
             render();
+            renderBrief();
+            saveSeen();
             loadedOnce = true;
             setText(
                 "intelUpdatedAt",
