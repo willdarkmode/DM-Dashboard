@@ -855,13 +855,15 @@ FROM ELIGIBLE`;
             var rest = n(r.valor_restante);
 
             if (rest <= 0) {
-                lines.push({ tone: "good", html: "<b>Meta comercial atingida</b> considerando faturado + previsto (" + pctFmt(fatPrev / meta * 100) + " da meta)." });
+                lines.push({ tone: "good", html: "<b>Meta comercial atingida</b> considerando faturado + previsto." });
             } else {
-                var cover = previsto > 0 ? " O previsto em aberto soma " + brl(previsto) + ", com " + brl(chance) + " em grande chance." : "";
+                var cover = previsto > 0
+                    ? " Previsto em aberto: " + brl(previsto) + (chance > 0 ? ", dos quais " + brl(chance) + " em grande chance." : ".")
+                    : "";
                 lines.push({
                     tone: r.dias_uteis_restantes <= 5 ? "bad" : "warn",
-                    html: "<b>Faltam " + brl(rest) + " para a meta</b> em " + intFmt(r.dias_uteis_restantes) +
-                          " dias úteis (" + brl(r.necessario_por_dia_util) + " por dia)." + cover
+                    html: "Faltam <b>" + brl(rest) + "</b>: é preciso vender <b>" + brl(r.necessario_por_dia_util) +
+                          " por dia útil</b> nos próximos " + intFmt(r.dias_uteis_restantes) + " dias úteis." + cover
                 });
             }
 
@@ -873,24 +875,6 @@ FROM ELIGIBLE`;
                     html: "Faturado + previsto está <b>" + (v >= 0 ? "+" : "") + num(v, 1) + "%</b> em relação ao mesmo período de " + cmp.ano + "."
                 });
             }
-        }
-
-        var urgent = insights.filter(function (x) { return x.severity === "CRITICAL" || x.severity === "HIGH"; });
-        if (urgent.length) {
-            lines.push({
-                tone: "bad",
-                html: "<b>" + intFmt(urgent.length) + " sinais de alta prioridade.</b> O mais urgente: " + esc(urgent[0].title) + "."
-            });
-        }
-
-        if (reactivationUniqueClients > 0) {
-            lines.push({ tone: "info", html: "<b>" + intFmt(reactivationUniqueClients) + " clientes recorrentes</b> pararam de comprar e há estoque livre para atendê-los." });
-        }
-
-        var capital = insights.filter(function (x) { return x.type === "PROMO"; })
-            .reduce(function (s, x) { return s + n(x.capital); }, 0);
-        if (capital > 0) {
-            lines.push({ tone: "info", html: "<b>" + brl(capital) + " em estoque excedente</b> pode virar campanha sem comprometer a cobertura de segurança." });
         }
 
         var fresh = insights.filter(function (x) { return x.isNew; });
