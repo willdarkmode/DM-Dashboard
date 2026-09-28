@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — V2.28.5
+ * DM Dashboard — V2.29.0
  *
  * Arquitetura consolidada:
  * - um único JavaScript de aplicação
@@ -9,7 +9,7 @@
  * Regra financeira validada no DBExplorer em 15/09/2026.
  */
 var DMRules = {
-    version: "2.28.5",
+    version: "2.29.0",
     companies: [1, 2, 3],
     saleTops: [
         8, 2011, 2019, 2022, 2029, 2059, 2073,
@@ -53,7 +53,7 @@ console.info(
 );
 
 /*
- * DM Dashboard — V2.28.5 (consolidado)
+ * DM Dashboard — V2.29.0 (consolidado)
  * Ordem preservada da versão funcional:
  *   1) módulos e navegação (dashboard.js)
  *   2) motor da Visão Geral (antigo tv.js)
@@ -4105,6 +4105,37 @@ ORDER BY ORDEM`;
     };
   }
 
+  // V2.29: compara o período em andamento com o MESMO DIA ÚTIL do ano anterior
+  // (antes comparava com o período inteiro de 2025, o que sempre parecia queda).
+  function ehDiaUtilBR(d) {
+    var w = d.getDay();
+    return w !== 0 && w !== 6 && !ehFeriadoBR(d);
+  }
+
+  function alinharAnoAnterior(periodo, anterior, hoje) {
+    var h = cloneDate(hoje);
+    var ini = cloneDate(periodo.inicio);
+    var fim = cloneDate(periodo.fim);
+    if (h >= fim) return { inicio: anterior.inicio, fim: anterior.fim, du: null };
+
+    var k = 0;
+    var d = ini;
+    while (d <= h) {
+      if (ehDiaUtilBR(d)) k++;
+      d = addDays(d, 1);
+    }
+
+    var limite = cloneDate(anterior.fim);
+    var a = cloneDate(anterior.inicio);
+    var c = 0;
+    var fimAnt = cloneDate(anterior.inicio);
+    while (a <= limite && c < k) {
+      if (ehDiaUtilBR(a)) { c++; fimAnt = cloneDate(a); }
+      a = addDays(a, 1);
+    }
+    return { inicio: anterior.inicio, fim: fimAnt, du: k };
+  }
+
   // Algoritmo de Meeus/Jones/Butcher para a Páscoa gregoriana.
   function pascoa(ano) {
     var a = ano % 19;
@@ -4250,7 +4281,8 @@ WITH P AS (
     FROM DUAL
 ),
 FATPREV_ATUAL AS (
-    SELECT NVL(SUM(VEND),0) + NVL(SUM(OPOR),0) AS TAXA
+    SELECT NVL(SUM(VEND),0) + NVL(SUM(OPOR),0) AS TAXA,
+           NVL(SUM(VEND),0) AS VENDA
     FROM (
         SELECT
             SUM(
@@ -4284,7 +4316,8 @@ FATPREV_ATUAL AS (
     )
 ),
 FATPREV_ANT AS (
-    SELECT NVL(SUM(VEND),0) + NVL(SUM(OPOR),0) AS TAXA
+    SELECT NVL(SUM(VEND),0) + NVL(SUM(OPOR),0) AS TAXA,
+           NVL(SUM(VEND),0) AS VENDA
     FROM (
         SELECT
             SUM(
@@ -4373,7 +4406,9 @@ SELECT
     ) AS DEVOLUCOES,
 
     (SELECT TAXA FROM FATPREV_ATUAL) AS FATURADO_PREVISTO,
-    (SELECT TAXA FROM FATPREV_ANT) AS FATURADO_PREVISTO_ANT
+    (SELECT TAXA FROM FATPREV_ANT) AS FATURADO_PREVISTO_ANT,
+    (SELECT VENDA FROM FATPREV_ATUAL) AS FATURADO_REAL,
+    (SELECT VENDA FROM FATPREV_ANT) AS FATURADO_REAL_ANT
 
 FROM DUAL`;
   }
@@ -4700,7 +4735,7 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
     setText("necessarioDia", brl(ritmo.necessario_por_dia_util));
 
     var comp = d.comparativo_ano_anterior || {};
-    setText("comparativoLabel", "Período " + (comp.ano || "anterior"));
+    setText("comparativoLabel", "Faturado vs " + (comp.ano || "ano anterior") + (comp.du ? " · mesmo dia útil" : ""));
 
     var compEl = document.getElementById("comparativoAnoAnterior");
     if (compEl) {
@@ -4754,9 +4789,10 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
     }, 0);
 
     var fatPrev = n(kpi.FATURADO_PREVISTO);
-    var fatPrevAnt = n(kpi.FATURADO_PREVISTO_ANT);
-    var variacao = fatPrevAnt !== 0
-      ? ((fatPrev - fatPrevAnt) / Math.abs(fatPrevAnt)) * 100
+    var fatReal = n(kpi.FATURADO_REAL);
+    var fatRealAnt = n(kpi.FATURADO_REAL_ANT);
+    var variacao = fatRealAnt !== 0
+      ? ((fatReal - fatRealAnt) / Math.abs(fatRealAnt)) * 100
       : 0;
 
     var diasUteis = diasUteisRestantes(periodo.fim);
@@ -4782,7 +4818,8 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
       },
       comparativo_ano_anterior: {
         ano: anterior.inicio.getFullYear(),
-        valor: fatPrevAnt,
+        valor: fatRealAnt,
+        du: anterior.du,
         variacao_percentual: variacao
       },
       estoque: {
@@ -4819,7 +4856,7 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
     setStatus("Atualizando", false);
 
     var periodo = periodoComercial(new Date());
-    var anterior = periodoAnoAnterior(periodo);
+    var anterior = alinharAnoAnterior(periodo, periodoAnoAnterior(periodo), new Date());
 
     var pKpi = paramsDatas([
       periodo.inicio,

@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — Sexto Sentido V2.28.5
+ * DM Dashboard — Sexto Sentido V2.29.0
  * Precisão gerencial + camada de ação: cada sinal pode ser investigado até produtos/clientes.
  */
 (function () {
@@ -864,15 +864,6 @@ FROM ELIGIBLE`;
                     tone: r.dias_uteis_restantes <= 5 ? "bad" : "warn",
                     html: "Faltam <b>" + brl(rest) + "</b>: é preciso vender <b>" + brl(r.necessario_por_dia_util) +
                           " por dia útil</b> nos próximos " + intFmt(r.dias_uteis_restantes) + " dias úteis." + cover
-                });
-            }
-
-            var cmp = d.comparativo_ano_anterior;
-            if (cmp && n(cmp.valor) !== 0) {
-                var v = n(cmp.variacao_percentual);
-                lines.push({
-                    tone: v >= 0 ? "good" : "warn",
-                    html: "Faturado + previsto está <b>" + (v >= 0 ? "+" : "") + num(v, 1) + "%</b> em relação ao mesmo período de " + cmp.ano + "."
                 });
             }
         }
