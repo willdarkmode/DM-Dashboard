@@ -4493,7 +4493,8 @@ BASE_META AS (
             WHEN 67 THEN 250000
             WHEN 29 THEN 300000
             WHEN 27 THEN 400000
-            WHEN 74 THEN 0 /* ASTEC: meta comercial ainda nao definida */
+            WHEN 74 THEN 150000 /* ASTEC: meta inicial provisoria */
+            WHEN 1  THEN 150000 /* Corporativo: complemento da meta comercial */
             WHEN 44 THEN 150000
             WHEN 59 THEN 200000
             WHEN 28 THEN 150000
@@ -4503,7 +4504,7 @@ BASE_META AS (
         END AS META_MENSAL
     FROM TGFVEN VEN
     WHERE VEN.CODVEND IN (
-        26,12,6,67,29,27,74,
+        26,12,6,67,29,27,74,1,
         44,59,28,62,63
     )
 ),
