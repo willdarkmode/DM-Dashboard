@@ -830,14 +830,20 @@ SELECT DISTINCT
     VEN.CODVEND,
     VEN.APELIDO
 FROM TGFVEN VEN
-JOIN TGFCAB CAB ON CAB.CODVEND = VEN.CODVEND
-WHERE CAB.DTNEG >= ADD_MONTHS(TRUNC(SYSDATE), -18)
-  AND CAB.CODTIPOPER IN (
-      2047,3097,3098,3099,19,2010,2018,3100,3108,
-      8,2011,2019,2022,2029,2059,2073,3200,3201,3202,
-      5119,6102,6103,6109,6110,02,7102
+WHERE VEN.APELIDO IS NOT NULL
+  AND (
+      VEN.CODVEND IN (1,27,74) /* ASTEC visivel antes de novas movimentacoes */
+      OR EXISTS (
+          SELECT 1 FROM TGFCAB CAB
+          WHERE CAB.CODVEND = VEN.CODVEND
+            AND CAB.DTNEG >= ADD_MONTHS(TRUNC(SYSDATE), -18)
+            AND CAB.CODTIPOPER IN (
+                2047,3097,3098,3099,19,2010,2018,3100,3108,
+                8,2011,2019,2022,2029,2059,2073,3200,3201,3202,
+                5119,6102,6103,6109,6110,02,7102
+            )
+      )
   )
-  AND VEN.APELIDO IS NOT NULL
 ORDER BY VEN.APELIDO`;
     }
 
@@ -4493,6 +4499,8 @@ BASE_META AS (
             WHEN 67 THEN 250000
             WHEN 29 THEN 300000
             WHEN 27 THEN 400000
+            WHEN 74 THEN 150000 /* ASTEC: meta inicial provisoria */
+            WHEN 1  THEN 150000 /* Corporativo: complemento da meta comercial */
             WHEN 44 THEN 150000
             WHEN 59 THEN 200000
             WHEN 28 THEN 150000
@@ -4502,7 +4510,7 @@ BASE_META AS (
         END AS META_MENSAL
     FROM TGFVEN VEN
     WHERE VEN.CODVEND IN (
-        26,12,6,67,29,27,
+        26,12,6,67,29,27,74,1,
         44,59,28,62,63
     )
 ),
@@ -4671,7 +4679,7 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
           </div>
           <div class="rank-detail">
             <span>Fat ${brl(v.Faturado)} · Prev ${brl(v.Previsto)}</span>
-            <span class="${rankPctClass(p)}">${pct(p)}</span>
+            <span class="${meta > 0 ? rankPctClass(p) : ""}">${meta > 0 ? pct(p) : "Sem meta"}</span>
           </div>
         </div>`;
     }).join("");
