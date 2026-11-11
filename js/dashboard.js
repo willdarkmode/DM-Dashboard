@@ -183,29 +183,6 @@ console.info(
         return code === null ? "" : " AND " + alias + ".CODVEND = " + String(code) + "\n";
     }
 
-    /*
-     * Mudanca de responsabilidade: ASTEC (74) desde 11/11/2026.
-     * Identifica notas de origem assistencia pelos ancestrais TGFVAR,
-     * nao simplesmente pela TOP final ou pelo vendedor da nota.
-     * O historico anterior permanece inalterado.
-     */
-    function assistanceRevenueExclusion(alias, sellerCode) {
-        if (sellerCode !== 27) return "";
-        return `
-  AND NOT (
-      ${alias}.DTNEG >= DATE '2026-11-11'
-      AND EXISTS (
-          SELECT 1
-          FROM TGFVAR V
-          JOIN TGFCAB OS ON OS.NUNOTA = V.NUNOTAORIG
-          WHERE OS.CODTIPOPER IN (2010,2018,3108)
-          START WITH V.NUNOTA = ${alias}.NUNOTA
-          CONNECT BY NOCYCLE PRIOR V.NUNOTAORIG = V.NUNOTA
-      )
-  )
-`;
-    }
-
     function dateFromInputValue(value) {
         var parts = String(value || "").split("-");
         if (parts.length !== 3) return null;
@@ -369,7 +346,7 @@ ORCAMENTOS AS (
     WHERE C.CODTIPOPER IN (2047, 3097)
       AND C.DTNEG >= P.DTINI
       AND C.DTNEG < P.DTFIM + 1
-` + quoteSeller + (sellerCode === 27 ? " AND C.DTNEG < DATE '2026-11-11'\n" : "") + `),
+` + quoteSeller + `),
 RAIZES AS (
     SELECT
         C.NUNOTA,
@@ -381,7 +358,7 @@ RAIZES AS (
     WHERE C.CODTIPOPER IN (2010, 3108)
       AND C.DTNEG >= P.DTINI
       AND C.DTNEG < P.DTFIM + 1
-` + rootSeller + (sellerCode === 27 ? " AND C.DTNEG < DATE '2026-11-11'\n" : "") + `),
+` + rootSeller + `),
 FLUXO AS (
     SELECT DISTINCT
         CONNECT_BY_ROOT R.NUNOTAORIG AS NUNOTA_RAIZ,
@@ -496,7 +473,7 @@ WHERE CAB.STATUSNOTA = 'L'
       OR
       (CAB.TIPMOV = 'D' AND CAB.CODTIPOPER IN (${DM_RULES_SQL.returnTops}))
   )
-` + saleSeller + assistanceRevenueExclusion("CAB", sellerCode);
+` + saleSeller;
     }
 
     /*
@@ -571,7 +548,7 @@ BASE AS (
           OR
           (CAB.TIPMOV = 'D' AND CAB.CODTIPOPER IN (${DM_RULES_SQL.returnTops}))
       )
-` + saleSeller + assistanceRevenueExclusion("CAB", sellerCode) + `),
+` + saleSeller + `),
 AGRUPADO AS (
     SELECT
         DT_PERIODO,
@@ -650,7 +627,7 @@ BASE AS (
           OR
           (CAB.TIPMOV = 'D' AND CAB.CODTIPOPER IN (${DM_RULES_SQL.returnTops}))
       )
-` + saleSeller + assistanceRevenueExclusion("CAB", sellerCode) + `),
+` + saleSeller + `),
 AGRUPADO AS (
     SELECT
         COD_SEGMENTO,
@@ -717,7 +694,7 @@ BASE AS (
           OR
           (CAB.TIPMOV = 'D' AND CAB.CODTIPOPER IN (${DM_RULES_SQL.returnTops}))
       )
-` + saleSeller + assistanceRevenueExclusion("CAB", sellerCode) + `),
+` + saleSeller + `),
 AGRUPADO AS (
     SELECT
         CODTIPPARC,
@@ -4476,19 +4453,6 @@ VENDAS AS (
       AND CAB.CODEMP IN (${EMPRESAS_SQL})
       AND CAB.CODTIPOPER NOT IN (2060,2061)
       AND CAB.NUNOTA NOT IN (${DM_RULES_SQL.excludedInvoices})
-      /* O faturamento ASTEC posterior a 11/11 nao integra as vendas do Luiz. */
-      AND NOT (
-          CAB.CODVEND = 27
-          AND CAB.DTNEG >= DATE '2026-11-11'
-          AND EXISTS (
-              SELECT 1
-              FROM TGFVAR V
-              JOIN TGFCAB OS ON OS.NUNOTA = V.NUNOTAORIG
-              WHERE OS.CODTIPOPER IN (2010,2018,3108)
-              START WITH V.NUNOTA = CAB.NUNOTA
-              CONNECT BY NOCYCLE PRIOR V.NUNOTAORIG = V.NUNOTA
-          )
-      )
     GROUP BY CAB.CODVEND
 
     UNION ALL
@@ -4512,12 +4476,6 @@ VENDAS AS (
       )
       AND CAB.PENDENTE = 'S'
       AND CAB.CODEMP IN (${EMPRESAS_SQL})
-      /* A previsao de pedidos ASTEC apos a transicao nao conta para o Luiz. */
-      AND NOT (
-          CAB.CODVEND = 27
-          AND CAB.CODTIPOPER IN (2010,2018,3108,2047)
-          AND CAB.AD_PREVENT >= DATE '2026-11-11'
-      )
     GROUP BY CAB.CODVEND
 ),
 AGRUPADO AS (
