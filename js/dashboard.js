@@ -4493,6 +4493,7 @@ BASE_META AS (
             WHEN 67 THEN 250000
             WHEN 29 THEN 300000
             WHEN 27 THEN 400000
+            WHEN 74 THEN 0 /* ASTEC: meta comercial ainda nao definida */
             WHEN 44 THEN 150000
             WHEN 59 THEN 200000
             WHEN 28 THEN 150000
@@ -4502,7 +4503,7 @@ BASE_META AS (
         END AS META_MENSAL
     FROM TGFVEN VEN
     WHERE VEN.CODVEND IN (
-        26,12,6,67,29,27,
+        26,12,6,67,29,27,74,
         44,59,28,62,63
     )
 ),
@@ -4671,7 +4672,7 @@ WHERE EST.CODLOCAL IN (10100,10200,20100,20200,30000,40000)
           </div>
           <div class="rank-detail">
             <span>Fat ${brl(v.Faturado)} · Prev ${brl(v.Previsto)}</span>
-            <span class="${rankPctClass(p)}">${pct(p)}</span>
+            <span class="${meta > 0 ? rankPctClass(p) : ""}">${meta > 0 ? pct(p) : "Sem meta"}</span>
           </div>
         </div>`;
     }).join("");
