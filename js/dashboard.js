@@ -1,5 +1,5 @@
 /*
- * DM Dashboard — V2.29.0
+ * DM Dashboard — V2.29.1
  *
  * Arquitetura consolidada:
  * - um único JavaScript de aplicação
@@ -9,7 +9,7 @@
  * Regra financeira validada no DBExplorer em 15/09/2026.
  */
 var DMRules = {
-    version: "2.29.0",
+    version: "2.29.1",
     companies: [1, 2, 3],
     saleTops: [
         8, 2011, 2019, 2022, 2029, 2059, 2073,
@@ -17,7 +17,15 @@ var DMRules = {
     ],
     returnTops: [2200, 2201, 2069, 2070],
     excludedInvoices: [66178, 70700, 73193, 77224, 85850],
-    commercialPeriodStartDay: 5
+    commercialPeriodStartDay: 5,
+    attribution: {
+        startDate: "2026-11-05",
+        astecSeller: 74,
+        astecUsers: [13, 44], // Contas ASTEC e HANA, verificadas em TSIUSU
+        astecOriginTops: [2010, 2018, 3108],
+        serviceInvoiceTops: [2019, 3201],
+        serviceForecastTops: [2010, 2018, 3108, 2047]
+    }
 };
 
 DMRules.financialTops = DMRules.saleTops.concat(DMRules.returnTops);
@@ -27,8 +35,45 @@ var DM_RULES_SQL = {
     saleTops: DMRules.saleTops.join(","),
     returnTops: DMRules.returnTops.join(","),
     financialTops: DMRules.financialTops.join(","),
-    excludedInvoices: DMRules.excludedInvoices.join(",")
+    excludedInvoices: DMRules.excludedInvoices.join(","),
+    attributionDate: "DATE '" + DMRules.attribution.startDate + "'",
+    astecUsers: DMRules.attribution.astecUsers.join(","),
+    astecOriginTops: DMRules.attribution.astecOriginTops.join(","),
+    serviceInvoiceTops: DMRules.attribution.serviceInvoiceTops.join(","),
+    serviceForecastTops: DMRules.attribution.serviceForecastTops.join(",")
 };
+
+
+/*
+ * A partir de 05/11/2026 a ASTEC e identificada por NF de servico
+ * vinculada a pedido/liberacao/OS gerada por usuario ASTEC/Hana.
+ * Valor considerado e sempre o da NF final (nao soma etapas TGFVAR).
+ * Devolucoes rastreaveis pela mesma origem tambem sao consideradas.
+ */
+function dmAstecFinancialCondition(alias) {
+    return "(" +
+        alias + ".DTNEG >= " + DM_RULES_SQL.attributionDate +
+        " AND ((" +
+            alias + ".TIPMOV = 'V' AND " + alias + ".CODTIPOPER IN (" + DM_RULES_SQL.serviceInvoiceTops + ")" +
+        ") OR (" +
+            alias + ".TIPMOV = 'D' AND " + alias + ".CODTIPOPER IN (" + DM_RULES_SQL.returnTops + ")" +
+        ")) AND (" +
+            alias + ".CODVEND = " + DMRules.attribution.astecSeller +
+            " OR (" + alias + ".TIPMOV = 'V' AND " + alias + ".CODUSUINC IN (" + DM_RULES_SQL.astecUsers + "))" +
+            " OR EXISTS (" +
+                "SELECT 1 FROM TGFVAR V JOIN TGFCAB OS ON OS.NUNOTA = V.NUNOTAORIG " +
+                "WHERE OS.CODTIPOPER IN (" + DM_RULES_SQL.astecOriginTops + ") " +
+                "AND OS.CODUSUINC IN (" + DM_RULES_SQL.astecUsers + ") " +
+                "START WITH V.NUNOTA = " + alias + ".NUNOTA " +
+                "CONNECT BY NOCYCLE PRIOR V.NUNOTAORIG = V.NUNOTA" +
+            ")" +
+        "))";
+}
+function dmAstecForecastCondition(alias) {
+    return "(" + alias + ".AD_PREVENT >= " + DM_RULES_SQL.attributionDate +
+        " AND " + alias + ".CODTIPOPER IN (" + DM_RULES_SQL.serviceForecastTops + ")" +
+        " AND " + alias + ".CODUSUINC IN (" + DM_RULES_SQL.astecUsers + "))";
+}
 
 window.DMRules = DMRules;
 window.DM_RULES_SQL = DM_RULES_SQL;
@@ -53,7 +98,7 @@ console.info(
 );
 
 /*
- * DM Dashboard — V2.29.0 (consolidado)
+ * DM Dashboard — V2.29.1 (consolidado)
  * Ordem preservada da versão funcional:
  *   1) módulos e navegação (dashboard.js)
  *   2) motor da Visão Geral (antigo tv.js)
@@ -183,6 +228,25 @@ console.info(
         return code === null ? "" : " AND " + alias + ".CODVEND = " + String(code) + "\n";
     }
 
+    function revenueSellerClause(alias, sellerCode) {
+        if (sellerCode === null) return ""; // Nao altera consolidado geral.
+        var astec = dmAstecFinancialCondition(alias);
+        if (sellerCode === DMRules.attribution.astecSeller) {
+            return " AND " + astec + "\n";
+        }
+        var corte = (sellerCode === 27 || sellerCode === 1)
+            ? " AND " + alias + ".DTNEG >= " + DM_RULES_SQL.attributionDate : "";
+        return sellerClause(alias, sellerCode) + corte + " AND NOT " + astec + "\n";
+    }
+    function assistanceSellerClause(alias, sellerCode) {
+        if (sellerCode === DMRules.attribution.astecSeller) {
+            return " AND " + alias + ".DTNEG >= " + DM_RULES_SQL.attributionDate +
+                " AND " + alias + ".CODUSUINC IN (" + DM_RULES_SQL.astecUsers + ")\n";
+        }
+        if (sellerCode === 27 || sellerCode === 1) return " AND 1 = 0\n";
+        return sellerClause(alias, sellerCode);
+    }
+
     function dateFromInputValue(value) {
         var parts = String(value || "").split("-");
         if (parts.length !== 3) return null;
@@ -244,6 +308,11 @@ console.info(
 
     function sqlFunnel(sellerCode) {
         var rootSeller = sellerClause("C", sellerCode);
+        if (sellerCode === 27 || sellerCode === 1) {
+            rootSeller += " AND C.DTNEG >= " + DM_RULES_SQL.attributionDate + "\n";
+        } else if (sellerCode === 74) {
+            rootSeller += " AND 1 = 0\n"; // ASTEC so tem operacoes de servico.
+        }
         return `
 WITH P AS (
     SELECT ? AS DTINI, ? AS DTFIM FROM DUAL
@@ -325,8 +394,8 @@ ORDER BY TIPO`;
     }
 
     function sqlAssistance(sellerCode) {
-        var quoteSeller = sellerClause("C", sellerCode);
-        var rootSeller = sellerClause("C", sellerCode);
+        var quoteSeller = assistanceSellerClause("C", sellerCode);
+        var rootSeller = assistanceSellerClause("C", sellerCode);
         return `
 WITH P AS (
     SELECT ? AS DTINI, ? AS DTFIM FROM DUAL
@@ -414,7 +483,7 @@ CROSS JOIN RESUMO R`;
     }
 
     function sqlRevenue(sellerCode) {
-        var saleSeller = sellerClause("CAB", sellerCode);
+        var saleSeller = revenueSellerClause("CAB", sellerCode);
         return `
 WITH P AS (
     SELECT ? AS DTINI, ? AS DTFIM FROM DUAL
@@ -482,7 +551,7 @@ WHERE CAB.STATUSNOTA = 'L'
      * de granularidade do gráfico não recalcule os demais blocos da aba.
      */
     function sqlPerformanceHistory(sellerCode, mode) {
-        var saleSeller = sellerClause("CAB", sellerCode);
+        var saleSeller = revenueSellerClause("CAB", sellerCode);
         var startExpr;
         var endExpr;
         var labelExpr;
@@ -583,7 +652,7 @@ ORDER BY A.DT_PERIODO`;
     }
 
     function sqlCompositionSegment(sellerCode) {
-        var saleSeller = sellerClause("CAB", sellerCode);
+        var saleSeller = revenueSellerClause("CAB", sellerCode);
         return `
 WITH P AS (
     SELECT ? AS DTINI, ? AS DTFIM FROM DUAL
@@ -660,7 +729,7 @@ ORDER BY A.FATURAMENTO_LIQUIDO DESC`;
     }
 
     function sqlCompositionClientType(sellerCode) {
-        var saleSeller = sellerClause("CAB", sellerCode);
+        var saleSeller = revenueSellerClause("CAB", sellerCode);
         return `
 WITH P AS (
     SELECT ? AS DTINI, ? AS DTFIM FROM DUAL
@@ -4422,27 +4491,12 @@ FROM DUAL`;
   function sqlRanking() {
     return `
 WITH P AS (
-    SELECT ? AS DTINI, ? AS DTFIM
-    FROM DUAL
+    SELECT ? AS DTINI, ? AS DTFIM FROM DUAL
 ),
-VENDAS AS (
-    SELECT
-        SUM(
-            CASE
-                WHEN CAB.CODTIPOPER IN (${DM_RULES_SQL.returnTops})
-                    THEN -CAB.VLRNOTA
-                ELSE CAB.VLRNOTA
-            END
-        ) AS VEND,
-        COUNT(DISTINCT
-            CASE
-                WHEN CAB.CODTIPOPER NOT IN (${DM_RULES_SQL.returnTops})
-                    THEN CAB.NUNOTA
-            END
-        ) AS QTDVEND,
-        0 AS OPOR,
-        0 AS QTDOPOR,
-        CAB.CODVEND
+FAT_BASE AS (
+    SELECT CAB.NUNOTA, CAB.CODTIPOPER, CAB.VLRNOTA,
+        CASE WHEN ${dmAstecFinancialCondition("CAB")} THEN 74
+             ELSE CAB.CODVEND END AS CODVEND_RANK
     FROM TGFCAB CAB
     CROSS JOIN P
     WHERE CAB.TIPMOV IN ('V','D')
@@ -4453,38 +4507,50 @@ VENDAS AS (
       AND CAB.CODEMP IN (${EMPRESAS_SQL})
       AND CAB.CODTIPOPER NOT IN (2060,2061)
       AND CAB.NUNOTA NOT IN (${DM_RULES_SQL.excludedInvoices})
-    GROUP BY CAB.CODVEND
-
-    UNION ALL
-
-    SELECT
-        0 AS VEND,
-        0 AS QTDVEND,
-        SUM(CAB.VLRNOTA) AS OPOR,
-        COUNT(DISTINCT CAB.NUNOTA) AS QTDOPOR,
-        CAB.CODVEND
+      AND (CAB.CODVEND NOT IN (1,27,74)
+           OR CAB.DTNEG >= ${DM_RULES_SQL.attributionDate})
+      AND (CAB.CODVEND <> 74 OR CAB.TIPMOV = 'D'
+           OR CAB.CODTIPOPER IN (${DM_RULES_SQL.serviceInvoiceTops}))
+),
+PREV_BASE AS (
+    SELECT CAB.NUNOTA, CAB.VLRNOTA,
+        CASE WHEN ${dmAstecForecastCondition("CAB")} THEN 74
+             ELSE CAB.CODVEND END AS CODVEND_RANK
     FROM TGFCAB CAB
     CROSS JOIN P
     WHERE CAB.TIPMOV = 'P'
       AND CAB.AD_PREVENT BETWEEN P.DTINI AND P.DTFIM
-      AND CAB.CODTIPOPER IN (
-          5,19,20,24,
-          2008,2010,2018,
-          3100,3108,3107,
-          5002,5003,
-          2047
-      )
+      AND CAB.CODTIPOPER IN (5,19,20,24,2008,2010,2018,3100,3108,3107,5002,5003,2047)
       AND CAB.PENDENTE = 'S'
       AND CAB.CODEMP IN (${EMPRESAS_SQL})
-    GROUP BY CAB.CODVEND
+      AND (CAB.CODVEND NOT IN (1,27,74)
+           OR CAB.AD_PREVENT >= ${DM_RULES_SQL.attributionDate})
+      AND (CAB.CODVEND NOT IN (1,27)
+           OR CAB.CODTIPOPER NOT IN (${DM_RULES_SQL.serviceForecastTops})
+           OR ${dmAstecForecastCondition("CAB")})
+      AND (CAB.CODVEND <> 74
+           OR CAB.CODTIPOPER IN (${DM_RULES_SQL.serviceForecastTops}))
+),
+VENDAS AS (
+    SELECT
+        SUM(CASE WHEN CODTIPOPER IN (${DM_RULES_SQL.returnTops}) THEN -VLRNOTA
+                 ELSE VLRNOTA END) AS VEND,
+        COUNT(DISTINCT CASE WHEN CODTIPOPER NOT IN (${DM_RULES_SQL.returnTops})
+             THEN NUNOTA END) AS QTDVEND,
+        0 AS OPOR, 0 AS QTDOPOR,
+        CODVEND_RANK AS CODVEND
+    FROM FAT_BASE
+    GROUP BY CODVEND_RANK
+    UNION ALL
+    SELECT 0 AS VEND, 0 AS QTDVEND,
+        SUM(VLRNOTA) AS OPOR, COUNT(DISTINCT NUNOTA) AS QTDOPOR,
+        CODVEND_RANK AS CODVEND
+    FROM PREV_BASE
+    GROUP BY CODVEND_RANK
 ),
 AGRUPADO AS (
-    SELECT
-        CODVEND,
-        SUM(VEND) AS VEND,
-        SUM(QTDVEND) AS QTDVEND,
-        SUM(OPOR) AS OPOR,
-        SUM(QTDOPOR) AS QTDOPOR
+    SELECT CODVEND, SUM(VEND) AS VEND, SUM(QTDVEND) AS QTDVEND,
+           SUM(OPOR) AS OPOR, SUM(QTDOPOR) AS QTDOPOR
     FROM VENDAS
     GROUP BY CODVEND
 ),
