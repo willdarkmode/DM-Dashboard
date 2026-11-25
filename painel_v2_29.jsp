@@ -1319,7 +1319,7 @@
 <script src="https://willdarkmode.github.io/DM-Dashboard/js/intelligence.js?v=2.28.5"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar intelligence.js remoto.');"></script>
-<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.28.5"
+<script src="https://willdarkmode.github.io/DM-Dashboard/js/dashboard.js?v=2.29.1"
         charset="UTF-8"
         onerror="console.error('[DM-DASHBOARD] Falha ao carregar dashboard.js remoto.');"></script>
 </body>
